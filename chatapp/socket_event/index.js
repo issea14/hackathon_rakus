@@ -2,8 +2,6 @@ const clients = new Map()
 
 export default (io, socket) => {
   const updateParticipants = () => {
-    // let participant = "";
-    // clients.forEach((value, key, map) => {participant = participant + value + ", "})
     let participant = Array.from(clients.values()).join(", ")
     io.sockets.emit("updateParticipants", participant);
   }
