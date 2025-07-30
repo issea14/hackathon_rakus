@@ -3,6 +3,16 @@ import { inject, ref, reactive, onMounted } from "vue"
 import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
+class Message {
+  constructor(user, text, dateTime, labels){
+    this.user = user;
+    this.text = text;
+    this.dateTime = dateTime;
+    this.labels = labels;
+  }
+}
+
+
 // #region global state
 const userName = inject("userName")
 // #endregion
@@ -34,7 +44,7 @@ const onPublish = () => {
 
 // 退室メッセージをサーバに送信する
 const onExit = () => {
-  socket.emit("exitEvent", /* userName + */ "さんが退室しました。")
+  socket.emit("exitEvent", userName.value +  "さんが退室しました。")
 }
 
 // メモを画面上に表示する
