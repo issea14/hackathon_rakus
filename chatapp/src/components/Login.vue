@@ -26,7 +26,7 @@ const onEnter = () => {
   }
 
   // 入室メッセージを送信
-
+ socket.emit("enterEvent",inputUserName.value.trim())
 
   // 全体で使用するnameに入力されたユーザー名を格納
   userName.value = inputUserName.value.trim()
