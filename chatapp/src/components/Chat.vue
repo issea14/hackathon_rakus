@@ -13,6 +13,7 @@ const socket = socketManager.getInstance()
 
 // #region reactive variable
 const chatContent = ref("")
+const participants = ref("")
 const chatList = reactive([])
 // #endregion
 
@@ -61,6 +62,11 @@ const onReceiveExit = (data) => {
 const onReceivePublish = (data) => {
   chatList.unshift(data)
 }
+
+// 参加者一覧を更新
+const onReceiveUpdateParticipants = (data) => {
+  participants.value = data
+}
 // #endregion
 
 // #region local methods
@@ -80,6 +86,11 @@ const registerSocketEvent = () => {
   socket.on("publishEvent", (data) => {
     onReceivePublish(data)
   })
+
+  // 参加者一覧更新を受け取ったら実行
+  socket.on("updateParticipants", (data) => {
+    onReceiveUpdateParticipants(data);
+  })
 }
 // #endregion
 </script>
@@ -89,6 +100,7 @@ const registerSocketEvent = () => {
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
     <div class="mt-10">
       <p>ログインユーザ：{{ userName }}さん</p>
+      <p>参加者: {{ participants }}</p>
       <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent"></textarea>
       <div class="mt-5">
         <button class="button-normal" @click="onPublish">投稿</button>
