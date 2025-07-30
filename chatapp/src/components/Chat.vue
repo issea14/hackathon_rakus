@@ -34,7 +34,7 @@ const onPublish = () => {
 
 // 退室メッセージをサーバに送信する
 const onExit = () => {
-  socket.emit("exitEvent", /* userName + */ "さんが退室しました。")
+  socket.emit("exitEvent", userName.value + "さんが退室しました。")
 }
 
 // メモを画面上に表示する
