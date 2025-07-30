@@ -3,6 +3,18 @@ import { inject, ref, reactive, onMounted } from "vue"
 import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
+class Message {
+  constructor(user, text, dateTime, labels){
+    this.user = user;
+    this.text = text;
+    this.dateTime = dateTime;
+    this.labels = labels;
+  }
+}
+const label_1 = "重要"
+const label_2 = "交通手段"
+const labels = [label_1, label_2]
+
 // #region global state
 const userName = inject("userName")
 // #endregion
@@ -26,7 +38,10 @@ onMounted(() => {
 // 投稿メッセージをサーバに送信する
 const onPublish = () => {
   //console.log("a")
-  socket.emit("publishEvent", userName.value + "さん: " + chatContent.value);
+  const nowTime = new Date();
+  const newMessage = new Message(userName.value, chatContent.value, nowTime, labels)
+  console.log(newMessage)
+  socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value =""
 
@@ -34,7 +49,9 @@ const onPublish = () => {
 
 // 退室メッセージをサーバに送信する
 const onExit = () => {
+
   socket.emit("exitEvent", userName.value + "さんが退室しました。")
+
 }
 
 // メモを画面上に表示する
@@ -59,7 +76,7 @@ const onReceiveExit = (data) => {
 
 // サーバから受信した投稿メッセージを画面上に表示する
 const onReceivePublish = (data) => {
-  chatList.unshift(data)
+  chatList.unshift(data.user + "さん: " + data.text)
 }
 // #endregion
 
