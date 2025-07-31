@@ -36,8 +36,8 @@ const participants = ref("")
 const participantsList = ref([])
 const chatList = reactive([])
 const messageList = reactive([])
-const isLabeled = reactive([false, false, false])
-const isSelected = reactive([false, false, false])
+const isLabeled = reactive([false, false, false, false, false, false])
+const isSelected = reactive([false, false, false, false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
