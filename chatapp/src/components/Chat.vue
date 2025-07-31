@@ -32,6 +32,7 @@ const participants = ref("")
 const participantsList = ref([])
 const chatList = reactive([])
 const isLabeled = reactive([false, false])
+const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 // isLabeled.value = [false, false]
 // #endregion
 
@@ -51,12 +52,21 @@ const onPublish = () => {
   }
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
-  const newMessage = new Message(userName.value, chatContent.value, nowTime, sendLabels)
+  
+  // リプライメッセージがある場合は元のメッセージを追加
+  let messageText = chatContent.value
+  if (replyMessage.value) {
+    messageText += " > " + replyMessage.value.text
+  }
+  
+  const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
   console.log(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
   clearLabeled()
+  // リプライメッセージをクリア
+  replyMessage.value = null
 }
 
 function clearLabeled(){
@@ -77,6 +87,21 @@ const onMemo = () => {
   chatList.unshift(userName.value + "さんのメモ：" + chatContent.value)
   // 入力欄を初期化
   chatContent.value = ""
+}
+
+// リプライボタンがクリックされた時の処理
+const onReply = (chat, index) => {
+  replyMessage.value = {
+    text: chat,
+    index: index,
+    timestamp: new Date() // TODO: 元メッセージの時間に合わせる
+  }
+  console.log("リプライ先:", replyMessage.value)
+}
+
+// リプライをクリアする処理
+const clearReply = () => {
+  replyMessage.value = null
 }
 
 // #endregion
@@ -155,11 +180,20 @@ const onKeydownPublish = (e) =>{
 
 <template>
   <div class="mx-auto my-5 px-4">
+    <!-- Material Icons フォントを読み込み -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
     <div class="mt-10">
       <p>ログインユーザ：{{ userName }}さん</p>
-
       <p>参加者: {{ participants }}</p>
+      <div v-if="replyMessage" class="reply-message">
+        <button class="clear-reply-button" @click="clearReply" title="返信をキャンセル">
+          <span class="material-icons">close</span>
+        </button>
+        <span>返信先メッセージ：{{ replyMessage.text }}</span>
+      </div>
+      
       <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent" @keydown.enter="onKeydownPublish"></textarea>
 
       <div class="mt-5">
@@ -177,7 +211,14 @@ const onKeydownPublish = (e) =>{
       </div>
       <div class="mt-5" v-if="chatList.length !== 0">
         <ul>
-          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">{{ chat }}</li>
+          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ chat }}</span>
+              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
         </ul>
       </div>
     </div>
@@ -236,6 +277,26 @@ const onKeydownPublish = (e) =>{
 .item {
   display: block;
   white-space: pre-line;
+}
+
+.reply-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+  min-width: 28px;
+  height: 28px;
+}
+
+.reply-button .material-icons {
+  font-size: 16px;
+}
+
+.reply-button:hover {
+  background-color: #0056b3;
 }
 
 .util-ml-8px {
@@ -405,6 +466,35 @@ const onKeydownPublish = (e) =>{
 
 .menu-actions {
   text-align: center;
+}
+
+.reply-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.clear-reply-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.clear-reply-button .material-icons {
+  font-size: 16px;
+}
+
+.clear-reply-button:hover {
+  background-color: #c82333;
 }
 
 </style>
