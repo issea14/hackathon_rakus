@@ -13,11 +13,11 @@ class Message {
 }
 
 const label_1 = "重要"
-const label_2 = "交通手段"
-const label_3 = "観光場所"
-const label_4 = "予算"
-const label_5 = "日程"
-const label_6 = "宿泊施設"
+const label_2 = "旅行先"
+const label_3 = "日程"
+const label_4 = "交通手段"
+const label_5 = "宿泊施設"
+const label_6 = "予算"
 const labels = [label_1, label_2, label_3, label_4, label_5, label_6]
 
 
