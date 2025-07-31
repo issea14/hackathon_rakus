@@ -34,9 +34,13 @@ const chatContent = ref("")
 const participants = ref("")
 const participantsList = ref([])
 const chatList = reactive([])
+const messageList = reactive([])
 const isLabeled = reactive([false, false])
+const isSelected = reactive([false, false])
+
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 // isLabeled.value = [false, false]
+
 // #endregion
 
 // #region lifecycle
@@ -64,6 +68,7 @@ const onPublish = () => {
   
   const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
   console.log(newMessage)
+  messageList.unshift(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
@@ -77,6 +82,25 @@ function clearLabeled(){
     isLabeled[i] = false
   }
 }
+
+const isEqualArray = function (array1, array2) {
+   var i = array1.length;
+   if (i != array2.length) return false;
+
+   while (i--) {
+     if (array1[i] !== array2[i]) return false;
+   }
+   return true;
+ };
+
+ const select = function (isLabeled, isSelected){
+  for(let i = 0; i < isSelected.length; i++){
+    if(isLabeled[i] & isSelected[i] == true){
+      return true
+    }
+  }
+  return false
+ }
 // 退室メッセージをサーバに送信する
 const onExit = () => {
 
@@ -90,6 +114,19 @@ const onMemo = () => {
   chatList.unshift(userName.value + "さんのメモ：" + chatContent.value)
   // 入力欄を初期化
   chatContent.value = ""
+}
+
+
+const onReset = () => {
+  for(let i = 0; i < isSelected.length; i++){
+    isSelected[i] = false
+  }
+}
+
+const onChangeSelection = () =>{
+  console.log(isSelected)
+  // console.log(chatList[0])
+  console.log(isEqualArray(messageList[0].isLabeled, isSelected))
 }
 
 // リプライボタンがクリックされた時の処理
@@ -139,6 +176,7 @@ const onGetMessages = (data) => {
     chatList.push(message.user + "さん: " + message.text)
   })
 }
+
 // #endregion
 
 // #region local methods
@@ -156,6 +194,7 @@ const registerSocketEvent = () => {
 
   // 投稿イベントを受け取ったら実行
   socket.on("publishEvent", (data) => {
+    // shownChatList = onChangeSelection()
     onReceivePublish(data)
   })
 
@@ -209,7 +248,31 @@ const onKeydownPublish = (e) =>{
           {{ labels[i] }}
         </label>
       </div>
+      <!-- <div v-if = "isSelected === [false, false]"></div> -->
+      /*
       <div class="mt-5" v-if="chatList.length !== 0">
+        <div v-if="!(isEqualArray(isSelected, [false, false]))">
+          <ul>
+            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
+              {{ message.text }}
+            </li>
+          </ul>
+        </div>
+        */
+        <div class="mt-5" v-if="chatList.length !== 0">
+        <div v-if="!(isEqualArray(isSelected, [false, false]))">
+          <ul>
+            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ message.txt }}</span>
+              <button class="reply-button" @click="onReply(message.txt, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+          </ul>
+        </div>
+        <div v-else>
         <ul>
           <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
             <div class="chat-item">
@@ -220,6 +283,19 @@ const onKeydownPublish = (e) =>{
             </div>
           </li>
         </ul>
+        </div>
+
+        /* <ul>
+          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ chat }}</span>
+              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+        </ul> */
+
       </div>
     </div>
     <router-link to="/" class="link">
@@ -250,14 +326,25 @@ const onKeydownPublish = (e) =>{
         </div>
       </div>
 
+
       <div class="vertical-divider"></div>
 
-      <div class="menu-item menu-labels">
+      /* <div class="menu-item menu-labels">
         <p class="menu-title">ラベル一覧</p>
         <ul>
           <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
         </ul>
-      </div>
+      </div> */
+      <div class="menu-item menu-labels">
+      <p class="menu-title">ラベル一覧</p>
+        <div class="selected" v-for = "(checked, i) in isSelected" :key = i>
+            <label>
+              <input class = "label-input" type = "checkbox" v-model="isSelected[i]" @change="onChangeSelection"></input>
+              {{ labels[i] }}
+            </label>
+        </div>
+        <button type="button" class="button-normal" @click="onReset">検索条件リセット</button>
+
     </div>
 
     <div class="menu-item menu-actions">
