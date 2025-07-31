@@ -29,7 +29,6 @@ const chatList = reactive([])
 const messageList = reactive([])
 const isLabeled = reactive([false, false])
 const isSelected = reactive([false, false])
-const shownChatList = reactive([])
 // #endregion
 
 // #region lifecycle
@@ -90,6 +89,12 @@ const onMemo = () => {
   chatList.unshift(userName.value + "さんのメモ：" + chatContent.value)
   // 入力欄を初期化
   chatContent.value = ""
+}
+
+const onReset = () => {
+  for(let i = 0; i < isSelected.length; i++){
+    isSelected[i] = false
+  }
 }
 
 const onChangeSelection = () =>{
@@ -198,7 +203,7 @@ const onKeydownPublish = (e) =>{
         <div v-if="!(isEqualArray(isSelected, [false, false]))">
           <ul>
             <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
-              {{ chatList[i] }}
+              {{ message.text }}
             </li>
           </ul>
         </div>
@@ -243,6 +248,7 @@ const onKeydownPublish = (e) =>{
               {{ labels[i] }}
             </label>
         </div>
+        <button type="button" class="button-normal" @click="onReset">検索条件リセット</button>
     </div>
 
     <div class="menu-item menu-actions">
