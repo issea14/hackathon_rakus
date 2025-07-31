@@ -503,8 +503,6 @@ const onKeydownPublish = (e) =>{
   background-color: #c82333;
 }
 
-</style>
-
 .menu-horizontal-container {
   display: flex;
   justify-content: space-evenly; 
