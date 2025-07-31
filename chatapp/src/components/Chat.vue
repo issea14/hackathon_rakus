@@ -40,7 +40,8 @@ onMounted(() => {
 const onPublish = () => {
   //console.log("a")
   const nowTime = new Date();
-  const newMessage = new Message(userName.value, chatContent.value, nowTime, isLabeled)
+  const sendLabels = [...isLabeled]
+  const newMessage = new Message(userName.value, chatContent.value, nowTime, sendLabels)
   console.log(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
