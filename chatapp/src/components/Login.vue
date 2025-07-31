@@ -63,7 +63,7 @@ const onEnter = () => {
             variant="outlined"
             density="comfortable"
             class="username-input"
-            @keyup.enter="onEnter"
+            @keypress.enter="onEnter"
           >
             <template #prepend-inner> <!-- 入力欄の先頭にアイコンを表示 -->
               <img :src="userIcon" alt="ユーザーアイコン" class="input-user-icon" />
