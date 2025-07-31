@@ -13,9 +13,12 @@ class Message {
 }
 
 const label_1 = "重要"
-const label_2 = "交通手段"
-const label_3 = "観光場所"
-const labels = [label_1, label_2, label_3]
+const label_2 = "旅行先"
+const label_3 = "日程"
+const label_4 = "交通手段"
+const label_5 = "宿泊施設"
+const label_6 = "予算"
+const labels = [label_1, label_2, label_3, label_4, label_5, label_6]
 
 // #region global state
 const userName = inject("userName")
@@ -38,8 +41,11 @@ const isSelected = reactive([false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
-  { name: "交通手段", color: "#3498db", icon: "mdi-car" },
-  { name: "観光場所", color: "#27ae60", icon: "mdi-camera" }
+  { name: "旅行先", color: "#3498db", icon: "mdi-map" },
+  { name: "日程", color: "#27ae60", icon: "mdi-calendar" },
+  { name: "交通手段", color: "#f39c12", icon: "mdi-car" },
+  { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
+  { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
 ])
 // #endregion
 
@@ -110,10 +116,12 @@ const onKeydownPublish = (e) => {
 // #region browser event handler
 const onPublish = () => {
   if (chatContent.value.trim() === "") {
+    alert("投稿内容を入力してください")
     return
   }
 
   const nowTime = new Date()
+  const sendLabels = [...isLabeled]
 
   // リプライメッセージがある場合は元のメッセージを追加
   let messageText = chatContent.value.trim()
@@ -128,13 +136,27 @@ const onPublish = () => {
   socket.emit("publishEvent", newMessage)
   chatContent.value = ""
   clearLabeled()
+
   // リプライメッセージをクリア
   replyMessage.value = null
   scrollToBottom()
+
+ // メッセージオブジェクトを作成
+  const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
+  console.log(newMessage) // デバッグ用ログ
+  messageList.unshift(newMessage) // メッセージリストに追加
+  socket.emit("publishEvent", newMessage); // メッセージを送信
+
+  // 入力欄を初期化
+  chatContent.value = ""
+  clearLabeled()
+
+  // リプライメッセージをクリア
+  replyMessage.value = null
+
 }
 
 const onExit = () => {
-  socket.emit("exitEvent", userName.value + "さんが退室しました。")
   router.push({ name: "login" })
 }
 
