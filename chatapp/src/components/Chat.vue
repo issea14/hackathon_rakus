@@ -122,7 +122,16 @@ const registerSocketEvent = () => {
   })
 }
 // #endregion
+
 socket.emit("getMessages", "")
+
+//ctrl+enter or command+enter で投稿
+const onKeydownPublish = (e) =>{
+  if (e.ctrlKey || e.metaKey){
+    onPublish();
+  }
+}
+
 </script>
 
 <template>
@@ -130,8 +139,10 @@ socket.emit("getMessages", "")
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
     <div class="mt-10">
       <p>ログインユーザ：{{ userName }}さん</p>
+
       <p>参加者: {{ participants }}</p>
-      <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent"></textarea>
+      <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent" @keydown.enter="onKeydownPublish"></textarea>
+
       <div class="mt-5">
         <button class="button-normal" @click="onPublish">投稿</button>
         <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
@@ -161,6 +172,7 @@ socket.emit("getMessages", "")
 
 .item {
   display: block;
+  white-space: pre-line;
 }
 
 .util-ml-8px {
