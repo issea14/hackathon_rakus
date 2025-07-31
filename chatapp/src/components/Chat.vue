@@ -272,7 +272,7 @@ socket.emit("getId");
     <span></span>
     <span></span>
   </label>
-  
+
   <div class="menu-content">
 
     <div class="menu-horizontal-container">
@@ -431,7 +431,7 @@ socket.emit("getId");
                 class="send-button"
                 :disabled="!chatContent.trim()"
               >
-                <v-icon>mdi-send</v-icon>
+              <span class="material-icons">send</span>
               </v-btn>
             </div>
           </div>
@@ -988,11 +988,11 @@ socket.emit("getId");
 .label-button {
   display: flex;
   align-items: center;
-  gap: 12px; 
+  gap: 12px;
   width: 100%;
   background: none;
   border: none;
-  padding: 10px 5px; 
+  padding: 10px 5px;
   cursor: pointer;
   text-align: left;
   font-size: 1.2rem;
@@ -1102,11 +1102,11 @@ socket.emit("getId");
 
 .menu-horizontal-container {
   display: flex;
-  justify-content: space-evenly;  
+  justify-content: space-evenly;
   align-items: flex-start;
   width: 100%;
   max-width: 340px;
-  border-bottom: 1px solid #ddd;  
+  border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
 
@@ -1118,10 +1118,10 @@ socket.emit("getId");
 
 .menu-horizontal-container .menu-item,
 .menu-horizontal-container .active-user {
-  border-bottom: none;  
-  padding: 0;  
-  width: auto;  
-  max-width: none;  
+  border-bottom: none;
+  padding: 0;
+  width: auto;
+  max-width: none;
 }
 .menu-horizontal-container .menu-profile {
   padding-bottom: 10px;
@@ -1130,7 +1130,7 @@ socket.emit("getId");
 .vertical-divider {
   width: 1px;
   align-self: stretch;
-  background-color: #ccc;  
+  background-color: #ccc;
 }
 
 .menu-horizontal-container .active-user {
@@ -1139,8 +1139,8 @@ socket.emit("getId");
 
 .menu-horizontal-container .active-user .user-name div {
   font-size: 1.2rem;
-  padding: 5px 0;   
-  color: #333;   
+  padding: 5px 0;
+  color: #333;
 }
 
 .menu-labels .menu-title {
@@ -1179,7 +1179,7 @@ socket.emit("getId");
 
 .checkbox-label .label-input {
   /* チェックボックスを右端に配置 */
-  margin-left: auto; 
+  margin-left: auto;
   /* サイズを少し大きくする */
   width: 18px;
   height: 18px;
