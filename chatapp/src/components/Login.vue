@@ -41,13 +41,17 @@ const onEnter = () => {
 
 
 <template>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
   <div class="login-container"> <!-- ページ全体のスタイル -->
     <div class="login-card"> <!-- ログインカードのスタイル -->
 
       <!-- ヘッダーセクション -->
       <div class="header-section">
         <div class="icon-wrapper">
-          <img :src="userIcon" alt="ユーザーアイコン" class="header-user-icon" /> <!-- ユーザーアイコン -->
+        <span class="material-icons" aria-hidden="true" style="font-size: 80px; color: white;">
+          travel_explore
+        </span>
         </div>
         <h1 class="login-title">ラベリングで管理する旅行計画チャット</h1> <!-- タイトル -->
         <p class="login-subtitle">チャットルームへようこそ</p> <!-- サブタイトル -->
