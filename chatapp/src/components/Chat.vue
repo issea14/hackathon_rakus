@@ -13,7 +13,7 @@ class Message {
   }
 }
 
-var id = 0;
+var id;
 
 const label_1 = "重要"
 const label_2 = "交通手段"
@@ -177,6 +177,7 @@ const registerSocketEvent = () => {
 // #endregion
 
 socket.emit("getMessages", "")
+socket.emit("getId");
 
 //ctrl+enter or command+enter で投稿
 const onKeydownPublish = (e) =>{
