@@ -101,6 +101,7 @@ function clearLabeled(){
 }
 
 const isEqualArray = function (array1, array2) {
+  console.log(array1[0], array2[0])
    var i = array1.length;
    if (i != array2.length) return false;
 
@@ -322,7 +323,7 @@ socket.emit("getId");
           <!-- メッセージリスト -->
           <div
             v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter(message => {
-              isEqualArray(isSelected, message.isLabeled)
+              return select(message.isLabeled, isSelected)
             }))"
             :key="index"
             :class="[
@@ -340,7 +341,7 @@ socket.emit("getId");
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <!-- <div v-if="message.labels && message.labels.length > 0" class="message-labels">
                 <v-chip
                   v-for="label in message.labels"
                   :key="label"
@@ -355,7 +356,7 @@ socket.emit("getId");
                   ></v-icon>
                   {{ label }}
                 </v-chip>
-              </div>
+              </div> -->
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
