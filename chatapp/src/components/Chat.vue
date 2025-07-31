@@ -1,7 +1,7 @@
 <script setup>
-import { inject, ref, reactive, onMounted, vModelCheckbox } from "vue"
+import { inject, ref, reactive, onMounted, nextTick } from "vue"
+import { useRouter } from "vue-router"
 import socketManager from '../socketManager.js'
-import io from "socket.io-client"
 
 class Message {
   constructor(id, user, text, dateTime, isLabeled){
@@ -35,68 +35,63 @@ const labelIcons = [
 
 // #region global state
 const userName = inject("userName")
+const router = useRouter()
 // #endregion
 
 // #region local variable
 const socket = socketManager.getInstance()
+const chatListRef = ref(null)
 // #endregion
 
 // #region reactive variable
 const chatContent = ref("")
 const participants = ref("")
 const participantsList = ref([])
-const messageList = reactive([])
 const chatList = reactive([])
-const isLabeled = reactive([false, false])
-const isSelected = reactive([false, false])
-
+const messageList = reactive([])
+const isLabeled = reactive([false, false, false, false, false, false])
+const isSelected = reactive([false, false, false, false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
-// isLabeled.value = [false, false]
-
+const availableLabels = reactive([
+  { name: "重要", color: "#e74c3c", icon: "mdi-star" },
+  { name: "旅行先", color: "#3498db", icon: "mdi-map" },
+  { name: "日程", color: "#27ae60", icon: "mdi-calendar" },
+  { name: "交通手段", color: "#f39c12", icon: "mdi-car" },
+  { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
+  { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
+])
 // #endregion
 
 
 // #region lifecycle
 onMounted(() => {
   registerSocketEvent()
+  socket.emit("getMessages", "")
+  scrollToBottom()
 })
 // #endregion
 
-// #region browser event handler
-// 投稿メッセージをサーバに送信する
-const onPublish = () => {
-  //console.log("a")
-  if (chatContent.value.trim() === "") {
-    alert("投稿内容を入力してください")
-    return
-  }
-  const nowTime = new Date();
-  const sendLabels = [...isLabeled]
-
-  socket.emit("getId");
-  const newId = id;
-
-  // リプライメッセージがある場合は元のメッセージを追加
-  let messageText = chatContent.value
-  if (replyMessage.value) {
-    messageText += " > " + replyMessage.value.text
-  }
-
-  const newMessage = new Message(newId, userName.value, messageText, nowTime, sendLabels)
-
-  socket.emit("publishEvent", newMessage);
-  // 入力欄を初期化
-  chatContent.value = ""
-  clearLabeled()
-  // リプライメッセージをクリア
-  replyMessage.value = null
+// #region methods
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatListRef.value) {
+      chatListRef.value.scrollTop = chatListRef.value.scrollHeight
+    }
+  })
 }
 
-const onDelete = (message) => {
-  console.log(message)
-  if (confirm("メッセージを削除します. よろしいですか?")){
-  socket.emit("deleteEvent", message);
-  }
+const formatTime = (dateTime) => {
+  return new Date(dateTime).toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const formatDate = (dateTime) => {
+  return new Date(dateTime).toLocaleDateString('ja-JP', {
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 function clearLabeled(){
@@ -115,50 +110,19 @@ const isEqualArray = function (array1, array2) {
    return true;
  };
 
- const select = function (isLabeled, isSelected){
-  for(let i = 0; i < isSelected.length; i++){
-    if(isLabeled[i] & isSelected[i] == true){
+const select = function (messageLabels, selectedLabels){
+  for(let i = 0; i < selectedLabels.length; i++){
+    if(messageLabels[i] && selectedLabels[i]){
       return true
     }
   }
   return false
- }
-// 退室メッセージをサーバに送信する
-const onExit = () => {
-
-  socket.emit("exitEvent", userName.value + "さんが退室しました。")
-
-}
-
-// メモを画面上に表示する
-const onMemo = () => {
-  // メモの内容を表示
-  chatList.unshift(userName.value + "さんのメモ：" + chatContent.value)
-  // 入力欄を初期化
-  chatContent.value = ""
-}
-
-
-const onReset = () => {
-  for(let i = 0; i < isSelected.length; i++){
-    isSelected[i] = false
-  }
 }
 
 const onChangeSelection = () =>{
   console.log(isSelected)
   // console.log(chatList[0])
   console.log(isEqualArray(messageList[0].isLabeled, isSelected))
-}
-
-// リプライボタンがクリックされた時の処理
-const onReply = (chat, index) => {
-  replyMessage.value = {
-    text: chat,
-    index: index,
-    timestamp: new Date() // TODO: 元メッセージの時間に合わせる
-  }
-  console.log("リプライ先:", replyMessage.value)
 }
 
 // リプライをクリアする処理
@@ -168,39 +132,90 @@ const clearReply = () => {
 
 // #endregion
 
-// #region socket event handler
-// サーバから受信した入室メッセージ画面上に表示する
-const onReceiveEnter = (data) => {
-  chatList.unshift(data + "さんが入室しました。")
+// #region browser event handler
+// 投稿メッセージをサーバに送信する
+const onPublish = () => {
+  if (chatContent.value.trim() === "") {
+    alert("投稿内容を入力してください")
+    return
+  }
+
+  const nowTime = new Date()
+  // const sendLabels = [...isLabeled]
+
+  socket.emit("getId");
+  const newId = id;
+
+  // リプライメッセージがある場合は元のメッセージを追加
+  let messageText = chatContent.value.trim()
+  if (replyMessage.value) {
+    messageText += " > " + replyMessage.value.text
+  }
+
+  const sendLabels = labels.filter((label, index) => isLabeled[index])
+  const newMessage = new Message(newId, userName.value, messageText, nowTime, sendLabels)
+
+  socket.emit("publishEvent", newMessage)
+
+  // 入力欄を初期化
+  chatContent.value = ""
+  clearLabeled()
+
+  // リプライメッセージをクリア
+  replyMessage.value = null
+  scrollToBottom()
 }
 
-// サーバから受信した退室メッセージを受け取り画面上に表示する
-const onReceiveExit = (data) => {
-  chatList.unshift(data)
+const onDelete = (message) => {
+  console.log(message)
+  if (confirm("メッセージを削除します. よろしいですか?")){
+  socket.emit("deleteEvent", message);
+  }
 }
 
-// サーバから受信した投稿メッセージを画面上に表示する
+const onExit = () => {
+  router.push({ name: "login" })
+}
+
+const onReset = () => {
+  for(let i = 0; i < isSelected.length; i++){
+    isSelected[i] = false
+  }
+}
+
+// リプライボタンがクリックされた時の処理
+const onReply = (message) => {
+  replyMessage.value = {
+    text: message.text,
+    user: message.user,
+    timestamp: message.dateTime
+  }
+  console.log("リプライ先:", replyMessage.value)
+}
+
+//ctrl+enter or command+enter で投稿
+const onKeydownPublish = (e) =>{
+  if (e.ctrlKey || e.metaKey){
+    onPublish();
+  }
+}
+
 const onReceivePublish = (data) => {
-  //chatList.unshift(data.user + "さん: " + data.text)
   messageList.unshift(data)
-
-  console.log(messageList)
+  scrollToBottom()
 }
 
-// 参加者一覧を更新
 const onReceiveUpdateParticipants = (data) => {
   participants.value = data
   participantsList.value = data.split(", ")
-  console.log(participantsList, participants, data)
 }
 
-// 過去メッセージを取得
 const onGetMessages = (data) => {
   data.forEach(function(element, index, array) {
     const message = Object.assign(new Message(), element)
-    // chatList.push(message.user + "さん: " + message.text)
-    messageList.unshift(message)
+    messageList.push(message)
   })
+  scrollToBottom()
 }
 
 const onReceiveDeleteMessages = (data) => {
@@ -218,27 +233,14 @@ const onReceiveNewId = (data) => {
 // #endregion
 
 // #region local methods
-// イベント登録をまとめる
 const registerSocketEvent = () => {
-  // 入室イベントを受け取ったら実行
-  socket.on("enterEvent", (data) => {
-    onReceiveEnter(data)
-  })
-
-  // 退室イベントを受け取ったら実行
-  socket.on("exitEvent", (data) => {
-    onReceiveExit(data)
-  })
-
-  // 投稿イベントを受け取ったら実行
   socket.on("publishEvent", (data) => {
     // shownChatList = onChangeSelection()
     onReceivePublish(data)
   })
 
-  // 参加者一覧更新を受け取ったら実行
   socket.on("updateParticipants", (data) => {
-    onReceiveUpdateParticipants(data);
+    onReceiveUpdateParticipants(data)
   })
 
   socket.on("getMessages", (data) => {
@@ -258,103 +260,12 @@ const registerSocketEvent = () => {
 socket.emit("getMessages", "")
 socket.emit("getId");
 
-//ctrl+enter or command+enter で投稿
-const onKeydownPublish = (e) =>{
-  if (e.ctrlKey || e.metaKey){
-    onPublish();
-  }
-}
-
 </script>
-
 <template>
-  <div class="mx-auto my-5 px-4">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
-    <div class="mt-10">
-      <p>ログインユーザ：{{ userName }}さん</p>
-      <p>参加者: {{ participants }}</p>
-      <div v-if="replyMessage" class="reply-message">
-        <button class="clear-reply-button" @click="clearReply" title="返信をキャンセル">
-          <span class="material-icons">close</span>
-        </button>
-        <span>返信先メッセージ：{{ replyMessage.text }}</span>
-      </div>
-      
-      <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent" @keydown.enter="onKeydownPublish"></textarea>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-      <div class="mt-5">
-        <button class="button-normal" @click="onPublish">投稿</button>
-        <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
-      </div>
-      <div class="mt-5" v-for = "(checked, i) in isLabeled" :key = i>
-        <label for = "a">
-          <input class = "label-input" type = "checkbox" v-model="isLabeled[i]"></input>
-          {{ labels[i] }}
-        </label>
-      </div>
-      <!-- <div v-if = "isSelected === [false, false]"></div> -->
-      <!-- /*
-      <div class="mt-5" v-if="chatList.length !== 0">
-        <div v-if="!(isEqualArray(isSelected, [false, false]))">
-          <ul>
-            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
-              {{ message.text }}
-            </li>
-          </ul>
-        </div>
-        */ -->
-        <div class="mt-5" v-if="messageList.length !== 0">
-        <div v-if="!(isEqualArray(isSelected, [false, false]))">
-          <ul>
-            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
-            <div class="chat-item">
-              <span class="chat-text">
-                {{ message.user + "さん: " + message.text }}
-              </span>
-              <button class="reply-button" @click="onReply(message.txt, i)" title="リプライ">
-                <span class="material-icons">reply</span>
-              </button>
-              <button class="button-normal" @click="onDelete(messageList[i])">削除</button>
-            </div>
-          </li>
-          </ul>
-        </div>
-        <div v-else>
-        <ul>
-          <li class="item mt-4" v-for="(message, i) in messageList" :key="i">
-            <div class="chat-item">
-              <span class="chat-text">
-                {{ message.user + "さん: " + message.text }}
-              </span>
-              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
-                <span class="material-icons">reply</span>
-              </button>
-              <button class="button-normal" @click="onDelete(messageList[i])">削除</button>
-            </div>
-          </li>
-        </ul>
-        </div>
-
-        <!-- <ul>
-          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
-            <div class="chat-item">
-              <span class="chat-text">{{ chat }}</span>
-              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
-                <span class="material-icons">reply</span>
-              </button>
-            </div>
-          </li>
-        </ul> -->
-
-      </div>
-    </div>
-    <router-link to="/" class="link">
-      <button type="button" class="button-normal button-exit" @click="onExit">退室する</button>
-    </router-link>
-  </div>
-  <div class="hamburger-menu">
+  <div class="chat-container">
+    <div class="hamburger-menu">
   <input type="checkbox" id="menu-btn-check">
   <label for="menu-btn-check" class="menu-btn">
     <span></span>
@@ -391,31 +302,382 @@ const onKeydownPublish = (e) =>{
         </div>
         <button type="button" class="button-normal button-reset" @click="onReset">絞り込みをリセット</button>
       </div>
-      </div>
-
-    <div class="menu-item menu-actions">
-      <router-link to="/" class="link">
-      <button type="button" class="button-normal button-exit" @click="onExit">退室</button>
-    </router-link>
     </div>
   </div>
   </div>
+
+  <!-- メインコンテンツ -->
+  <div class="chat-main">
+
+    <!-- タイトル部分 -->
+    <div class="chat-header">
+      <h1 class="chat-title">旅行計画チャットルーム</h1>
+      <p class="user-info">{{ userName }} さんでログイン中</p>
+    </div>
+
+      <!-- チャットエリア -->
+      <div class="chat-messages" ref="chatListRef">
+        <div class="messages-container">
+          <!-- メッセージリスト -->
+          <div
+            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter(message => {
+              if (!message.labels) return false;
+              for(let i = 0; i < isSelected.length; i++) {
+                if(isSelected[i] && message.labels.includes(labels[i])) {
+                  return true;
+                }
+              }
+              return false;
+            }))"
+            :key="index"
+            :class="[
+              'message-item',
+              {
+                'own-message': message.user === userName,
+              }
+            ]"
+          >
+            <div class="message-bubble">
+              <div class="message-header">
+                <span class="message-user">{{ message.user }}</span>
+                <button class="reply-button" @click="onReply(message)" title="リプライ">
+                  <v-icon size="16">mdi-reply</v-icon>
+                </button>
+              </div>
+              <div class="message-content">{{ message.text }}</div>
+              <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+                <v-chip
+                  v-for="label in message.labels"
+                  :key="label"
+                  size="x-small"
+                  :color="availableLabels.find(l => l.name === label)?.color"
+                  class="message-label"
+                >
+                  <v-icon
+                    size="12"
+                    :icon="availableLabels.find(l => l.name === label)?.icon"
+                    start
+                  ></v-icon>
+                  {{ label }}
+                </v-chip>
+              </div>
+              <div class="message-meta">
+                <span class="message-time">{{ formatTime(message.dateTime) }}</span>
+                <span class="message-date">{{ formatDate(message.dateTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 投稿エリア -->
+      <div class="chat-input-area">
+        <div class="input-container">
+          <!-- リプライ表示 -->
+          <div v-if="replyMessage" class="reply-section">
+            <div class="reply-message">
+              <v-icon color="primary" size="16">mdi-reply</v-icon>
+              <span class="reply-text">{{ replyMessage.user }}さんへの返信: {{ replyMessage.text }}</span>
+              <v-btn
+                icon
+                size="x-small"
+                variant="text"
+                @click="clearReply"
+                class="clear-reply-btn"
+              >
+                <v-icon size="16">mdi-close</v-icon>
+              </v-btn>
+            </div>
+          </div>
+
+          <!-- ラベル選択 -->
+          <div class="label-selection">
+            <p class="label-title">ラベルを選択:</p>
+            <div class="label-checkboxes">
+              <label
+                v-for="(label, i) in labels"
+                :key="i"
+                class="label-checkbox"
+                :class="{ 'selected': isLabeled[i] }"
+              >
+                <input
+                  type="checkbox"
+                  v-model="isLabeled[i]"
+                  class="checkbox-input"
+                >
+                <v-icon
+                  :icon="availableLabels[i].icon"
+                  size="16"
+                  :color="isLabeled[i] ? availableLabels[i].color : '#95a5a6'"
+                ></v-icon>
+                <span class="label-text">{{ label }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- メッセージ入力 -->
+          <div class="message-input-section">
+            <div class="input-wrapper">
+              <v-textarea
+                v-model="chatContent"
+                placeholder="メッセージを入力してください... (Ctrl+Enter / Cmd+Enterで送信)"
+                variant="outlined"
+                rows="3"
+                no-resize
+                class="chat-textarea"
+                @keydown.enter="onKeydownPublish"
+              ></v-textarea>
+              <v-btn
+                @click="onPublish"
+                color="primary"
+                size="large"
+                class="send-button"
+                :disabled="!chatContent.trim()"
+              >
+                <v-icon>mdi-send</v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 退室ボタン -->
+      <div class="exit-section">
+        <v-btn
+          @click="onExit"
+          block
+          varilant="outlined"
+          color="success"
+          class="exit-main-button"
+        >
+          退室
+        </v-btn>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <style scoped>
-.link {
-  text-decoration: none;
+/* ページ全体のスタイル */
+.chat-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.area {
-  width: 500px;
-  border: 1px solid #000;
-  margin-top: 8px;
+/* メインコンテンツ */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem 1rem;
+  gap: 1rem;
 }
 
-.item {
-  display: block;
+/* チャットタイトル */
+.chat-header {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.user-info {
+  color: #7f8c8d;
+  font-size: 1rem;
+  /* ユーザー名のみ 強調 */
+  font-weight: bold;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+/* チャットメッセージエリア */
+.chat-messages {
+  flex: 1;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  padding: 1.5rem;
+  max-height: 400px;
+  min-height: 300px;
+}
+
+.messages-container {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1rem;
+}
+
+.message-item {
+  display: flex;
+  align-items: flex-start;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-item.own-message {
+  justify-content: flex-end;
+}
+
+
+.message-bubble {
+  max-width: 70%;
+  background: #f8f9fa;
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.own-message .message-bubble {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.reply-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reply-button:hover {
+  background: rgba(52, 152, 219, 0.2);
+}
+
+.reply-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #3498db;
+}
+
+.reply-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reply-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.clear-reply-btn {
+  min-width: auto !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.filter-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.filter-checkbox:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-text {
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.reset-filter-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.message-user {
+  font-weight: 600;
+}
+
+.message-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.message-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-wrap: break-word;
   white-space: pre-line;
+}
+
+.message-labels {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .reply-button {
@@ -445,8 +707,119 @@ const onKeydownPublish = (e) =>{
 .button-exit {
   color: #000;
   margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
+.message-label {
+  height: 20px;
+}
+
+/* 投稿エリア */
+.chat-input-area {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.label-selection {
+  margin-bottom: 1rem;
+}
+
+.label-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.label-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.label-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 2px solid #ecf0f1;
+}
+
+.label-checkbox.selected {
+  background: #f8f9fa;
+  border-color: #3498db;
+}
+
+.checkbox-input {
+  display: none;
+}
+
+.label-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.message-input-section {
+  display: flex;
+  gap: 1rem;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  align-items: flex-end;
+}
+
+.chat-textarea {
+  flex: 1;
+  border-radius: 12px;
+}
+
+.send-button {
+  border-radius: 12px;
+  height: 56px;
+  width: 56px;
+  min-width: 56px;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  transition: all 0.3s ease;
+}
+
+.send-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+/* 退室ボタン */
+.exit-section {
+  text-align: center; /* 退室ボタンの位置を中央に */
+}
+
+/* 退室ボタンのスタイル */
+.exit-main-button {
+  border-radius: 12px; /* 退室ボタンの角を丸く */
+  font-weight: 800; /* 退室ボタンのフォントを太く */
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* 退室ボタンのホバー効果 */
+.exit-main-button.v-btn--outlined:hover {
+  background-color: rgba(40,167,69,0.1) !important; /* ホバー時の薄緑 */
+}
+
+
+
+/* ハンバーガーメニュー（元のデザインを保持） */
 .hamburger-menu {
   position: fixed;
   right: 20px;
@@ -462,11 +835,17 @@ const onKeydownPublish = (e) =>{
   display: block;
   width: 33px;
   height: 33px;
-  background: #333;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   border-radius: 50%;
   position: relative;
   cursor: pointer;
   z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .menu-btn span {
@@ -512,9 +891,10 @@ const onKeydownPublish = (e) =>{
   top: 0;
   right: -100%;
   z-index: 1;
-  background-color: #f1f1f1;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+  backdrop-filter: blur(20px);
   transition: all 0.5s;
-  padding-top: 60px;
+  padding-top: 80px;
 }
 
 .menu-content ul {
@@ -538,6 +918,10 @@ const onKeydownPublish = (e) =>{
   padding: 80px 20px 20px 20px;
 }
 
+#menu-btn-check:checked ~ .menu-content {
+  right: 0;
+}
+
 .active-user {
   width: 100%;
   max-width: 340px;
@@ -548,7 +932,7 @@ const onKeydownPublish = (e) =>{
 
 .menu-item {
   width: 100%;
-  max-width: 340px;
+  max-width: 280px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
@@ -573,6 +957,7 @@ const onKeydownPublish = (e) =>{
 
 .user-name {
   font-weight: bold;
+  color: #2c3e50;
   font-size: 1.2rem;
 }
 
@@ -615,6 +1000,64 @@ const onKeydownPublish = (e) =>{
   text-align: center;
 }
 
+.button-exit {
+  color: #fff;
+  background: linear-gradient(135deg, #94e54d, #36eb09); /* 退室ボタンのグラデーション */
+  margin-top: 15px;
+}
+
+/* スクロールバーのカスタマイズ */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .chat-main {
+    padding: 1rem 0.5rem;
+  }
+
+  .chat-header {
+    padding: 1.5rem;
+  }
+
+  .chat-title {
+    font-size: 1.5rem;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+  }
+
+  .label-checkboxes {
+    justify-content: center;
+  }
+
+  .input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .send-button {
+    height: 48px;
+    width: 100%;
+    min-width: auto;
+  }
+}
 .reply-message {
   display: flex;
   align-items: center;
