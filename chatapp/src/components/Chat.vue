@@ -43,9 +43,13 @@ const chatContent = ref("")
 const participants = ref("")
 const participantsList = ref([])
 const chatList = reactive([])
+const messageList = reactive([])
 const isLabeled = reactive([false, false])
+const isSelected = reactive([false, false])
+
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 // isLabeled.value = [false, false]
+
 // #endregion
 
 // #region lifecycle
@@ -73,6 +77,7 @@ const onPublish = () => {
   
   const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
   console.log(newMessage)
+  messageList.unshift(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
@@ -86,6 +91,25 @@ function clearLabeled(){
     isLabeled[i] = false
   }
 }
+
+const isEqualArray = function (array1, array2) {
+   var i = array1.length;
+   if (i != array2.length) return false;
+
+   while (i--) {
+     if (array1[i] !== array2[i]) return false;
+   }
+   return true;
+ };
+
+ const select = function (isLabeled, isSelected){
+  for(let i = 0; i < isSelected.length; i++){
+    if(isLabeled[i] & isSelected[i] == true){
+      return true
+    }
+  }
+  return false
+ }
 // 退室メッセージをサーバに送信する
 const onExit = () => {
 
@@ -99,6 +123,19 @@ const onMemo = () => {
   chatList.unshift(userName.value + "さんのメモ：" + chatContent.value)
   // 入力欄を初期化
   chatContent.value = ""
+}
+
+
+const onReset = () => {
+  for(let i = 0; i < isSelected.length; i++){
+    isSelected[i] = false
+  }
+}
+
+const onChangeSelection = () =>{
+  console.log(isSelected)
+  // console.log(chatList[0])
+  console.log(isEqualArray(messageList[0].isLabeled, isSelected))
 }
 
 // リプライボタンがクリックされた時の処理
@@ -148,6 +185,7 @@ const onGetMessages = (data) => {
     chatList.push(message.user + "さん: " + message.text)
   })
 }
+
 // #endregion
 
 // #region local methods
@@ -165,6 +203,7 @@ const registerSocketEvent = () => {
 
   // 投稿イベントを受け取ったら実行
   socket.on("publishEvent", (data) => {
+    // shownChatList = onChangeSelection()
     onReceivePublish(data)
   })
 
@@ -217,7 +256,31 @@ const onKeydownPublish = (e) =>{
           {{ labels[i] }}
         </label>
       </div>
+      <!-- <div v-if = "isSelected === [false, false]"></div> -->
+      <!-- /*
       <div class="mt-5" v-if="chatList.length !== 0">
+        <div v-if="!(isEqualArray(isSelected, [false, false]))">
+          <ul>
+            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
+              {{ message.text }}
+            </li>
+          </ul>
+        </div>
+        */ -->
+        <div class="mt-5" v-if="chatList.length !== 0">
+        <div v-if="!(isEqualArray(isSelected, [false, false]))">
+          <ul>
+            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ message.txt }}</span>
+              <button class="reply-button" @click="onReply(message.txt, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+          </ul>
+        </div>
+        <div v-else>
         <ul>
           <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
             <div class="chat-item">
@@ -228,6 +291,19 @@ const onKeydownPublish = (e) =>{
             </div>
           </li>
         </ul>
+        </div>
+
+        <!-- <ul>
+          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ chat }}</span>
+              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+        </ul> -->
+
       </div>
     </div>
     <router-link to="/" class="link">
@@ -241,7 +317,7 @@ const onKeydownPublish = (e) =>{
     <span></span>
     <span></span>
   </label>
-
+  
   <div class="menu-content">
 
     <div class="menu-horizontal-container">
@@ -261,15 +337,15 @@ const onKeydownPublish = (e) =>{
       <div class="vertical-divider"></div>
 
       <div class="menu-item menu-labels">
-        <p class="menu-title">ラベル一覧</p>
-        <ul>
-          <li v-for="(label, i) in labels" :key="i">
-             <button class="label-button">
-              <span class="material-icons">{{ labelIcons[i] }}</span>
-              <span>{{ label }}</span>
-            </button>
-          </li>
-        </ul>
+        <p class="menu-title">ラベルで絞り込み</p>
+        <div class="selected" v-for="(checked, i) in isSelected" :key="i">
+          <label class="checkbox-label">
+            <span class="material-icons">{{ labelIcons[i] }}</span>
+            <span>{{ labels[i] }}</span>
+            <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
+          </label>
+        </div>
+        <button type="button" class="button-normal button-reset" @click="onReset">絞り込みをリセット</button>
       </div>
       </div>
 
@@ -278,6 +354,7 @@ const onKeydownPublish = (e) =>{
       <button type="button" class="button-normal button-exit" @click="onExit">退室</button>
     </router-link>
     </div>
+  </div>
   </div>
   </div>
 </template>
@@ -566,4 +643,54 @@ const onKeydownPublish = (e) =>{
   padding: 5px 0;   
   color: #333;   
 }
+.menu-labels .menu-title {
+  font-size: 1rem;
+  color: #777;
+  margin: 0 0 10px 0;
+  /* ★追加：少しだけ左に余白を持たせる */
+  padding-left: 5px;
+}
+
+/* ★追加：チェックボックスとラベルのスタイル */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkbox-label:hover {
+  background-color: #e9e9e9;
+}
+
+.checkbox-label .material-icons {
+  font-size: 1.5rem;
+  color: #555;
+}
+
+.checkbox-label span {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.checkbox-label .label-input {
+  /* チェックボックスを右端に配置 */
+  margin-left: auto; 
+  /* サイズを少し大きくする */
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.button-reset {
+  margin-top: 15px;
+  width: 100%;
+  padding: 8px 0;
+  font-size: 1.1rem;
+}
+
 </style>
