@@ -1,5 +1,5 @@
 const clients = new Map()
-const messages = []
+let messages = []
 
 export default (io, socket) => {
   const updateParticipants = () => {
@@ -12,7 +12,7 @@ export default (io, socket) => {
     socket.broadcast.emit("enterEvent", data)
     clients.set(socket.id, data)
     updateParticipants()
-    console.log(clients)
+    //console.log(clients)
   })
 
   // 退室メッセージをクライアントに送信する
@@ -25,15 +25,23 @@ export default (io, socket) => {
   // 投稿メッセージを送信する
   socket.on("publishEvent", (data) => {
     messages.unshift(data)
-    console.log(messages)
+    //console.log(messages)
     io.sockets.emit("publishEvent", data)
+  })
+
+  //投稿を削除する
+  socket.on("deleteEvent", (data) => {
+    var newList = messages.filter((message) => message.id != data.id)
+    messages = newList
+    io.sockets.emit("deleteMessages", data)
+    console.log(messages)
   })
 
   // ソケット切断時
   socket.on("disconnect", (reason) => {
     clients.delete(socket.id)
     updateParticipants()
-    console.log(reason)
+    //console.log(reason)
   })
 
   socket.on("getMessages", (data) => {

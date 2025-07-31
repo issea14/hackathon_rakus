@@ -4,13 +4,16 @@ import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
 class Message {
-  constructor(user, text, dateTime, isLabeled){
+  constructor(id, user, text, dateTime, isLabeled){
+    this.id = id;
     this.user = user;
     this.text = text;
     this.dateTime = dateTime;
     this.isLabeled = isLabeled;
   }
 }
+
+var id = 0;
 
 const label_1 = "重要"
 const label_2 = "交通手段"
@@ -30,10 +33,16 @@ const socket = socketManager.getInstance()
 const chatContent = ref("")
 const participants = ref("")
 const participantsList = ref([])
+const messageList = reactive([])
 const chatList = reactive([])
 const isLabeled = reactive([false, false])
 // isLabeled.value = [false, false]
 // #endregion
+
+const getId = () => {
+  id+=1;
+  return id;
+}
 
 // #region lifecycle
 onMounted(() => {
@@ -47,12 +56,19 @@ const onPublish = () => {
   //console.log("a")
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
-  const newMessage = new Message(userName.value, chatContent.value, nowTime, sendLabels)
+  const newId = getId();
+  const newMessage = new Message(newId, userName.value, chatContent.value, nowTime, sendLabels)
   console.log(newMessage)
+  messageList.unshift(newMessage);
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
   clearLabeled()
+}
+
+const onDelete = (message) => {
+  console.log(message)
+  socket.emit("deleteEvent", message);
 }
 
 function clearLabeled(){
@@ -107,6 +123,15 @@ const onGetMessages = (data) => {
     chatList.push(message.user + "さん: " + message.text)
   })
 }
+
+const onReceiveDeleteMessages = (data) => {
+
+  let indexToRemove = messageList.findIndex(message => message.id === data.id);
+
+  if (indexToRemove !== -1) {
+    messageList.splice(indexToRemove, 1);
+  }
+}
 // #endregion
 
 // #region local methods
@@ -134,6 +159,10 @@ const registerSocketEvent = () => {
 
   socket.on("getMessages", (data) => {
     onGetMessages(data)
+  })
+
+  socket.on("deleteMessages", (data) => {
+    onReceiveDeleteMessages(data)
   })
 }
 // #endregion
@@ -171,9 +200,12 @@ const onKeydownPublish = (e) =>{
           {{ labels[i] }}
         </label>
       </div>
-      <div class="mt-5" v-if="chatList.length !== 0">
+      <div class="mt-5" v-if="messageList.length !== 0">
         <ul>
-          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">{{ chat }}</li>
+          <li class="item mt-4" v-for="(message, i) in messageList" :key="i">
+            {{ message.user + "さん: " + message.text }}
+            <button class="button-normal" @click="onDelete(messageList[i])">削除</button>
+          </li>
         </ul>
       </div>
     </div>
