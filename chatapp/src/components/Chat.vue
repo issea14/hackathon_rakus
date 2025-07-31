@@ -4,16 +4,15 @@ import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
 class Message {
-  constructor(user, text, dateTime, labels){
+  constructor(user, text, dateTime, isLabeled){
     this.user = user;
     this.text = text;
     this.dateTime = dateTime;
-    this.labels = labels;
+    this.isLabeled = isLabeled;
   }
 }
-const label_1 = "重要"
-const label_2 = "交通手段"
-const labels = [label_1, label_2]
+
+const labels = ["重要", "交通手段"]
 
 // #region global state
 const userName = inject("userName")
@@ -26,6 +25,8 @@ const socket = socketManager.getInstance()
 // #region reactive variable
 const chatContent = ref("")
 const chatList = reactive([])
+const isLabeled = reactive([false, false])
+// isLabeled.value = [false, false]
 // #endregion
 
 // #region lifecycle
@@ -39,14 +40,19 @@ onMounted(() => {
 const onPublish = () => {
   //console.log("a")
   const nowTime = new Date();
-  const newMessage = new Message(userName.value, chatContent.value, nowTime, labels)
+  const newMessage = new Message(userName.value, chatContent.value, nowTime, isLabeled)
   console.log(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
-  chatContent.value =""
-
+  chatContent.value = ""
+  clearLabeled()
 }
 
+function clearLabeled(){
+  for (let i = 0; i < labels.length; i++){
+    isLabeled[i] = false
+  }
+}
 // 退室メッセージをサーバに送信する
 const onExit = () => {
 
@@ -61,6 +67,7 @@ const onMemo = () => {
   // 入力欄を初期化
   chatContent.value = ""
 }
+
 // #endregion
 
 // #region socket event handler
@@ -110,6 +117,15 @@ const registerSocketEvent = () => {
       <div class="mt-5">
         <button class="button-normal" @click="onPublish">投稿</button>
         <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
+      </div>
+      <!-- <div class="mt-5" v-if="labels.length !== 0">
+          <input class = "label-input" v-for = "(label, i) in labels" :key = "i" v-model = "isLabeled.value" type = "checkbox">
+      </div> -->
+      <div class="mt-5" v-for = "(checked, i) in isLabeled" :key = i>
+        <label for = "a">
+          <input class = "label-input" type = "checkbox" v-model="isLabeled[i]"></input>
+          {{ labels[i] }}
+        </label>
       </div>
       <div class="mt-5" v-if="chatList.length !== 0">
         <ul>
