@@ -15,7 +15,10 @@ class Message {
 const label_1 = "重要"
 const label_2 = "交通手段"
 const label_3 = "観光場所"
-const labels = [label_1, label_2, label_3]
+const label_4 = "予算"
+const label_5 = "日程"
+const label_6 = "宿泊施設"
+const labels = [label_1, label_2, label_3, label_4, label_5, label_6]
 
 
 // #region global state
@@ -166,9 +169,6 @@ const onKeydownPublish = (e) =>{
         <button class="button-normal" @click="onPublish">投稿</button>
         <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
       </div>
-      <!-- <div class="mt-5" v-if="labels.length !== 0">
-          <input class = "label-input" v-for = "(label, i) in labels" :key = "i" v-model = "isLabeled.value" type = "checkbox">
-      </div> -->
       <div class="mt-5" v-for = "(checked, i) in isLabeled" :key = i>
         <label for = "a">
           <input class = "label-input" type = "checkbox" v-model="isLabeled[i]"></input>
@@ -192,25 +192,31 @@ const onKeydownPublish = (e) =>{
     <span></span>
     <span></span>
   </label>
-  
+
   <div class="menu-content">
-    <div class="menu-item menu-profile">
-      <span class="user-name">参加者</span>
-    </div>
 
-    <div class = "active-user">
-      <span class="user-name">
-        <div v-for="(participant, i) in participantsList" :key="i">
-          {{ participant }}さん
+    <div class="menu-horizontal-container">
+      <div class="participants-column">
+        <div class="menu-item menu-profile">
+          <span class="user-name">ログイン中のユーザ</span>
         </div>
-      </span>
-    </div>
+        <div class="active-user">
+          <span class="user-name">
+            <div v-for="(participant, i) in participantsList" :key="i">
+              {{ participant }}さん
+            </div>
+          </span>
+        </div>
+      </div>
 
-    <div class="menu-item menu-labels">
-      <p class="menu-title">ラベル一覧</p>
-      <ul>
-        <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
-      </ul>
+      <div class="vertical-divider"></div>
+
+      <div class="menu-item menu-labels">
+        <p class="menu-title">ラベル一覧</p>
+        <ul>
+          <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
+        </ul>
+      </div>
     </div>
 
     <div class="menu-item menu-actions">
@@ -310,7 +316,7 @@ const onKeydownPublish = (e) =>{
   height: 100%;
   position: fixed;
   top: 0;
-  right: -100%; 
+  right: -100%;
   z-index: 1;
   background-color: #f1f1f1;
   transition: all 0.5s;
@@ -333,7 +339,7 @@ const onKeydownPublish = (e) =>{
 }
 
 #menu-btn-check:checked ~ .menu-content {
-  right: 0; 
+  right: 0;
 }
 
 .menu-content {
@@ -341,7 +347,7 @@ const onKeydownPublish = (e) =>{
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  padding: 80px 20px 20px 20px; 
+  padding: 80px 20px 20px 20px;
 }
 
 .active-user {
@@ -349,12 +355,12 @@ const onKeydownPublish = (e) =>{
   max-width: 280px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
-  text-align: center; 
+  text-align: center;
 }
 
 .menu-item {
   width: 100%;
-  max-width: 280px; 
+  max-width: 280px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
@@ -367,7 +373,7 @@ const onKeydownPublish = (e) =>{
   display: flex;
   align-items: center;
   border-bottom: none;
-  padding-bottom: 0; 
+  padding-bottom: 0;
 }
 
 .user-icon {
@@ -407,5 +413,47 @@ const onKeydownPublish = (e) =>{
   text-align: center;
 }
 
-</style>
+.menu-horizontal-container {
+  display: flex;
+  justify-content: space-evenly; 
+  align-items: flex-start;
+  width: 100%;
+  max-width: 280px;
+  border-bottom: 1px solid #ddd; 
+  padding: 20px 0;
+}
 
+.menu-horizontal-container > div.participants-column,
+.menu-horizontal-container > div.menu-labels {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-horizontal-container .menu-item,
+.menu-horizontal-container .active-user {
+  border-bottom: none; 
+  padding: 0; 
+  width: auto; 
+  max-width: none; 
+}
+
+.menu-horizontal-container .menu-profile {
+  padding-bottom: 10px;
+}
+
+.vertical-divider {
+  width: 1px;
+  align-self: stretch;
+  background-color: #ccc; 
+}
+
+.menu-horizontal-container .active-user {
+  text-align: left;
+}
+
+.menu-horizontal-container .active-user .user-name div {
+  font-size: 1.1rem; 
+  padding: 3px 0;   
+  color: #333;    
+}
+</style>
