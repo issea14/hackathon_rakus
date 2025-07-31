@@ -12,7 +12,14 @@ class Message {
   }
 }
 
-const labels = ["重要", "交通手段"]
+const label_1 = "重要"
+const label_2 = "旅行先"
+const label_3 = "日程"
+const label_4 = "交通手段"
+const label_5 = "宿泊施設"
+const label_6 = "予算"
+const labels = [label_1, label_2, label_3, label_4, label_5, label_6]
+
 
 // #region global state
 const userName = inject("userName")
@@ -25,10 +32,15 @@ const socket = socketManager.getInstance()
 // #region reactive variable
 const chatContent = ref("")
 const participants = ref("")
+const participantsList = ref([])
 const chatList = reactive([])
 const messageList = reactive([])
 const isLabeled = reactive([false, false])
 const isSelected = reactive([false, false])
+
+const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
+// isLabeled.value = [false, false]
+
 // #endregion
 
 // #region lifecycle
@@ -41,15 +53,28 @@ onMounted(() => {
 // 投稿メッセージをサーバに送信する
 const onPublish = () => {
   //console.log("a")
+  if (chatContent.value.trim() === "") {
+    alert("投稿内容を入力してください")
+    return
+  }
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
-  const newMessage = new Message(userName.value, chatContent.value, nowTime, sendLabels)
+  
+  // リプライメッセージがある場合は元のメッセージを追加
+  let messageText = chatContent.value
+  if (replyMessage.value) {
+    messageText += " > " + replyMessage.value.text
+  }
+  
+  const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
   console.log(newMessage)
   messageList.unshift(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
   clearLabeled()
+  // リプライメッセージをクリア
+  replyMessage.value = null
 }
 
 function clearLabeled(){
@@ -91,6 +116,7 @@ const onMemo = () => {
   chatContent.value = ""
 }
 
+
 const onReset = () => {
   for(let i = 0; i < isSelected.length; i++){
     isSelected[i] = false
@@ -102,6 +128,22 @@ const onChangeSelection = () =>{
   // console.log(chatList[0])
   console.log(isEqualArray(messageList[0].isLabeled, isSelected))
 }
+
+// リプライボタンがクリックされた時の処理
+const onReply = (chat, index) => {
+  replyMessage.value = {
+    text: chat,
+    index: index,
+    timestamp: new Date() // TODO: 元メッセージの時間に合わせる
+  }
+  console.log("リプライ先:", replyMessage.value)
+}
+
+// リプライをクリアする処理
+const clearReply = () => {
+  replyMessage.value = null
+}
+
 // #endregion
 
 // #region socket event handler
@@ -123,6 +165,8 @@ const onReceivePublish = (data) => {
 // 参加者一覧を更新
 const onReceiveUpdateParticipants = (data) => {
   participants.value = data
+  participantsList.value = data.split(", ")
+  console.log(participantsList, participants, data)
 }
 
 // 過去メッセージを取得
@@ -178,20 +222,26 @@ const onKeydownPublish = (e) =>{
 
 <template>
   <div class="mx-auto my-5 px-4">
+    <!-- Material Icons フォントを読み込み -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
     <div class="mt-10">
       <p>ログインユーザ：{{ userName }}さん</p>
-
       <p>参加者: {{ participants }}</p>
+      <div v-if="replyMessage" class="reply-message">
+        <button class="clear-reply-button" @click="clearReply" title="返信をキャンセル">
+          <span class="material-icons">close</span>
+        </button>
+        <span>返信先メッセージ：{{ replyMessage.text }}</span>
+      </div>
+      
       <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent" @keydown.enter="onKeydownPublish"></textarea>
 
       <div class="mt-5">
         <button class="button-normal" @click="onPublish">投稿</button>
         <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
       </div>
-      <!-- <div class="mt-5" v-if="labels.length !== 0">
-          <input class = "label-input" v-for = "(label, i) in labels" :key = "i" v-model = "isLabeled.value" type = "checkbox">
-      </div> -->
       <div class="mt-5" v-for = "(checked, i) in isLabeled" :key = i>
         <label for = "a">
           <input class = "label-input" type = "checkbox" v-model="isLabeled[i]"></input>
@@ -199,6 +249,7 @@ const onKeydownPublish = (e) =>{
         </label>
       </div>
       <!-- <div v-if = "isSelected === [false, false]"></div> -->
+      /*
       <div class="mt-5" v-if="chatList.length !== 0">
         <div v-if="!(isEqualArray(isSelected, [false, false]))">
           <ul>
@@ -207,11 +258,44 @@ const onKeydownPublish = (e) =>{
             </li>
           </ul>
         </div>
-        <div v-else>
-          <li class="item mt-4" v-for="(message, i) in messageList" :key="i">
-              {{ chatList[i] }}
-            </li>
+        */
+        <div class="mt-5" v-if="chatList.length !== 0">
+        <div v-if="!(isEqualArray(isSelected, [false, false]))">
+          <ul>
+            <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ message.txt }}</span>
+              <button class="reply-button" @click="onReply(message.txt, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+          </ul>
         </div>
+        <div v-else>
+        <ul>
+          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ chat }}</span>
+              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+        </ul>
+        </div>
+
+        /* <ul>
+          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+            <div class="chat-item">
+              <span class="chat-text">{{ chat }}</span>
+              <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
+                <span class="material-icons">reply</span>
+              </button>
+            </div>
+          </li>
+        </ul> */
+
       </div>
     </div>
     <router-link to="/" class="link">
@@ -225,23 +309,34 @@ const onKeydownPublish = (e) =>{
     <span></span>
     <span></span>
   </label>
-  
+
   <div class="menu-content">
-    <div class="menu-item menu-profile">
-      <span class="user-name">ログイン中のユーザ名</span>
-    </div>
 
-    <div class = "active-user">
-      <span class="user-name">{{ userName }}さん</span>
-    </div>
+    <div class="menu-horizontal-container">
+      <div class="participants-column">
+        <div class="menu-item menu-profile">
+          <span class="user-name">ログイン中のユーザ</span>
+        </div>
+        <div class="active-user">
+          <span class="user-name">
+            <div v-for="(participant, i) in participantsList" :key="i">
+              {{ participant }}さん
+            </div>
+          </span>
+        </div>
+      </div>
 
-    <div class="menu-item menu-labels">
+
+      <div class="vertical-divider"></div>
+
+      /* <div class="menu-item menu-labels">
+        <p class="menu-title">ラベル一覧</p>
+        <ul>
+          <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
+        </ul>
+      </div> */
+      <div class="menu-item menu-labels">
       <p class="menu-title">ラベル一覧</p>
-      <!-- <ul>
-        <li><a href="#">ラベル１</a></li>
-        <li><a href="#">ラベル２</a></li>
-        <li><a href="#">ラベル３</a></li>
-        </ul> -->
         <div class="selected" v-for = "(checked, i) in isSelected" :key = i>
             <label>
               <input class = "label-input" type = "checkbox" v-model="isSelected[i]" @change="onChangeSelection"></input>
@@ -249,6 +344,7 @@ const onKeydownPublish = (e) =>{
             </label>
         </div>
         <button type="button" class="button-normal" @click="onReset">検索条件リセット</button>
+
     </div>
 
     <div class="menu-item menu-actions">
@@ -274,6 +370,26 @@ const onKeydownPublish = (e) =>{
 .item {
   display: block;
   white-space: pre-line;
+}
+
+.reply-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+  min-width: 28px;
+  height: 28px;
+}
+
+.reply-button .material-icons {
+  font-size: 16px;
+}
+
+.reply-button:hover {
+  background-color: #0056b3;
 }
 
 .util-ml-8px {
@@ -348,7 +464,7 @@ const onKeydownPublish = (e) =>{
   height: 100%;
   position: fixed;
   top: 0;
-  right: -100%; 
+  right: -100%;
   z-index: 1;
   background-color: #f1f1f1;
   transition: all 0.5s;
@@ -371,7 +487,7 @@ const onKeydownPublish = (e) =>{
 }
 
 #menu-btn-check:checked ~ .menu-content {
-  right: 0; 
+  right: 0;
 }
 
 .menu-content {
@@ -379,7 +495,7 @@ const onKeydownPublish = (e) =>{
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  padding: 80px 20px 20px 20px; 
+  padding: 80px 20px 20px 20px;
 }
 
 .active-user {
@@ -387,12 +503,12 @@ const onKeydownPublish = (e) =>{
   max-width: 280px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
-  text-align: center; 
+  text-align: center;
 }
 
 .menu-item {
   width: 100%;
-  max-width: 280px; 
+  max-width: 280px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
@@ -405,7 +521,7 @@ const onKeydownPublish = (e) =>{
   display: flex;
   align-items: center;
   border-bottom: none;
-  padding-bottom: 0; 
+  padding-bottom: 0;
 }
 
 .user-icon {
@@ -445,5 +561,75 @@ const onKeydownPublish = (e) =>{
   text-align: center;
 }
 
-</style>
+.reply-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
 
+.clear-reply-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.clear-reply-button .material-icons {
+  font-size: 16px;
+}
+
+.clear-reply-button:hover {
+  background-color: #c82333;
+}
+
+.menu-horizontal-container {
+  display: flex;
+  justify-content: space-evenly; 
+  align-items: flex-start;
+  width: 100%;
+  max-width: 280px;
+  border-bottom: 1px solid #ddd; 
+  padding: 20px 0;
+}
+
+.menu-horizontal-container > div.participants-column,
+.menu-horizontal-container > div.menu-labels {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-horizontal-container .menu-item,
+.menu-horizontal-container .active-user {
+  border-bottom: none; 
+  padding: 0; 
+  width: auto; 
+  max-width: none; 
+}
+.menu-horizontal-container .menu-profile {
+  padding-bottom: 10px;
+}
+
+.vertical-divider {
+  width: 1px;
+  align-self: stretch;
+  background-color: #ccc; 
+}
+
+.menu-horizontal-container .active-user {
+  text-align: left;
+}
+
+.menu-horizontal-container .active-user .user-name div {
+  font-size: 1.1rem; 
+  padding: 3px 0;   
+  color: #333;    
+}
+</style>
