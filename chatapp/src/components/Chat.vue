@@ -19,6 +19,15 @@ const label_4 = "交通手段"
 const label_5 = "宿泊施設"
 const label_6 = "予算"
 const labels = [label_1, label_2, label_3, label_4, label_5, label_6]
+// 各ラベルに対応するアイコンを追加
+const labelIcons = [
+  "priority_high", // 重要
+  "place",         // 旅行先
+  "calendar_today",// 日程
+  "directions_car",// 交通手段
+  "hotel",         // 宿泊施設
+  "attach_money"   // 予算
+]
 
 
 // #region global state
@@ -183,7 +192,6 @@ const onKeydownPublish = (e) =>{
 
 <template>
   <div class="mx-auto my-5 px-4">
-    <!-- Material Icons フォントを読み込み -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
@@ -255,10 +263,15 @@ const onKeydownPublish = (e) =>{
       <div class="menu-item menu-labels">
         <p class="menu-title">ラベル一覧</p>
         <ul>
-          <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
+          <li v-for="(label, i) in labels" :key="i">
+             <button class="label-button">
+              <span class="material-icons">{{ labelIcons[i] }}</span>
+              <span>{{ label }}</span>
+            </button>
+          </li>
         </ul>
       </div>
-    </div>
+      </div>
 
     <div class="menu-item menu-actions">
       <router-link to="/" class="link">
@@ -390,13 +403,7 @@ const onKeydownPublish = (e) =>{
 
 .menu-content ul li {
   list-style: none;
-  margin-bottom: 20px;
-}
-
-.menu-content ul li a {
-  color: #333;
-  text-decoration: none;
-  font-size: 1.2rem;
+  margin-bottom: 0;
 }
 
 #menu-btn-check:checked ~ .menu-content {
@@ -413,7 +420,7 @@ const onKeydownPublish = (e) =>{
 
 .active-user {
   width: 100%;
-  max-width: 280px;
+  max-width: 340px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
   text-align: center;
@@ -421,7 +428,7 @@ const onKeydownPublish = (e) =>{
 
 .menu-item {
   width: 100%;
-  max-width: 280px;
+  max-width: 340px;
   border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
@@ -446,10 +453,11 @@ const onKeydownPublish = (e) =>{
 
 .user-name {
   font-weight: bold;
+  font-size: 1.2rem;
 }
 
 .menu-labels .menu-title {
-  font-size: 0.9em;
+  font-size: 1rem;
   color: #777;
   margin: 0 0 10px 0;
 }
@@ -459,15 +467,28 @@ const onKeydownPublish = (e) =>{
   list-style: none;
 }
 
-.menu-labels ul li a {
-  display: block;
-  padding: 10px 0;
+.label-button {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px 5px; 
+  cursor: pointer;
+  text-align: left;
+  font-size: 1.2rem;
   color: #333;
-  text-decoration: none;
   transition: background-color 0.2s;
+  border-radius: 4px;
 }
-.menu-labels ul li a:hover {
+
+.label-button:hover {
   background-color: #e9e9e9;
+}
+
+.label-button .material-icons {
+  font-size: 1.5rem;
 }
 
 .menu-actions {
@@ -503,15 +524,13 @@ const onKeydownPublish = (e) =>{
   background-color: #c82333;
 }
 
-</style>
-
 .menu-horizontal-container {
   display: flex;
-  justify-content: space-evenly; 
+  justify-content: space-evenly;  
   align-items: flex-start;
   width: 100%;
-  max-width: 280px;
-  border-bottom: 1px solid #ddd; 
+  max-width: 340px;
+  border-bottom: 1px solid #ddd;  
   padding: 20px 0;
 }
 
@@ -523,10 +542,10 @@ const onKeydownPublish = (e) =>{
 
 .menu-horizontal-container .menu-item,
 .menu-horizontal-container .active-user {
-  border-bottom: none; 
-  padding: 0; 
-  width: auto; 
-  max-width: none; 
+  border-bottom: none;  
+  padding: 0;  
+  width: auto;  
+  max-width: none;  
 }
 .menu-horizontal-container .menu-profile {
   padding-bottom: 10px;
@@ -535,7 +554,7 @@ const onKeydownPublish = (e) =>{
 .vertical-divider {
   width: 1px;
   align-self: stretch;
-  background-color: #ccc; 
+  background-color: #ccc;  
 }
 
 .menu-horizontal-container .active-user {
@@ -543,8 +562,8 @@ const onKeydownPublish = (e) =>{
 }
 
 .menu-horizontal-container .active-user .user-name div {
-  font-size: 1.1rem; 
-  padding: 3px 0;   
-  color: #333;    
+  font-size: 1.2rem;
+  padding: 5px 0;   
+  color: #333;   
 }
 </style>
