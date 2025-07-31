@@ -119,6 +119,7 @@ const onGetMessages = (data) => {
   data.forEach(function(element, index, array) {
     const message = Object.assign(new Message(), element)
     chatList.push(message.user + "さん: " + message.text)
+    messageList.unshift(message)
   })
 }
 
