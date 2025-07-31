@@ -56,7 +56,7 @@ const onPublish = () => {
   const newId = id;
   const newMessage = new Message(newId, userName.value, chatContent.value, nowTime, sendLabels)
   console.log(newMessage)
-  messageList.unshift(newMessage);
+  //messageList.unshift(newMessage);
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
@@ -105,8 +105,10 @@ const onReceiveExit = (data) => {
 
 // サーバから受信した投稿メッセージを画面上に表示する
 const onReceivePublish = (data) => {
-  chatList.unshift(data.user + "さん: " + data.text)
+  //chatList.unshift(data.user + "さん: " + data.text)
   messageList.unshift(data)
+
+  console.log(messageList)
 }
 
 // 参加者一覧を更新
