@@ -405,11 +405,7 @@ socket.emit("getId");
                   v-model="isLabeled[i]"
                   class="checkbox-input"
                 >
-                <v-icon
-                  :icon="availableLabels[i].icon"
-                  size="16"
-                  :color="isLabeled[i] ? availableLabels[i].color : '#95a5a6'"
-                ></v-icon>
+                <span class="material-icons">{{ labelIcons[i] }}</span>
                 <span class="label-text">{{ label }}</span>
               </label>
             </div>
