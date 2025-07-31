@@ -65,7 +65,9 @@ const onPublish = () => {
 
 const onDelete = (message) => {
   console.log(message)
+  if (confirm("メッセージを削除します. よろしいですか?")){
   socket.emit("deleteEvent", message);
+  }
 }
 
 function clearLabeled(){
