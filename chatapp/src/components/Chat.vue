@@ -13,7 +13,8 @@ class Message {
 }
 const label_1 = "重要"
 const label_2 = "交通手段"
-const labels = [label_1, label_2]
+const label_3 = "観光場所"
+const labels = [label_1, label_2, label_3, "label_4", "label_5"]
 
 // #region global state
 const userName = inject("userName")
@@ -26,6 +27,7 @@ const socket = socketManager.getInstance()
 // #region reactive variable
 const chatContent = ref("")
 const participants = ref("")
+const participantsList = ref([])
 const chatList = reactive([])
 // #endregion
 
@@ -83,6 +85,8 @@ const onReceivePublish = (data) => {
 // 参加者一覧を更新
 const onReceiveUpdateParticipants = (data) => {
   participants.value = data
+  participantsList.value = data.split(", ")
+  console.log(participantsList, participants, data)
 }
 
 // 過去メッセージを取得
@@ -167,20 +171,22 @@ const onKeydownPublish = (e) =>{
   
   <div class="menu-content">
     <div class="menu-item menu-profile">
-      <span class="user-name">ログイン中のユーザ名</span>
+      <span class="user-name">参加者</span>
     </div>
 
     <div class = "active-user">
-      <span class="user-name">{{ userName }}さん</span>
+      <span class="user-name">
+        <div v-for="(participant, i) in participantsList" :key="i">
+          {{ participant }}さん
+        </div>
+      </span>
     </div>
 
     <div class="menu-item menu-labels">
       <p class="menu-title">ラベル一覧</p>
       <ul>
-        <li><a href="#">ラベル１</a></li>
-        <li><a href="#">ラベル２</a></li>
-        <li><a href="#">ラベル３</a></li>
-        </ul>
+        <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
+      </ul>
     </div>
 
     <div class="menu-item menu-actions">
