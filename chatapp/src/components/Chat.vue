@@ -4,13 +4,16 @@ import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
 class Message {
-  constructor(user, text, dateTime, isLabeled){
+  constructor(id, user, text, dateTime, isLabeled){
+    this.id = id;
     this.user = user;
     this.text = text;
     this.dateTime = dateTime;
     this.isLabeled = isLabeled;
   }
 }
+
+var id;
 
 const label_1 = "重要"
 const label_2 = "旅行先"
@@ -42,8 +45,8 @@ const socket = socketManager.getInstance()
 const chatContent = ref("")
 const participants = ref("")
 const participantsList = ref([])
-const chatList = reactive([])
 const messageList = reactive([])
+const chatList = reactive([])
 const isLabeled = reactive([false, false])
 const isSelected = reactive([false, false])
 
@@ -51,6 +54,7 @@ const replyMessage = ref(null) // リプライ対象のメッセージ情報を�
 // isLabeled.value = [false, false]
 
 // #endregion
+
 
 // #region lifecycle
 onMounted(() => {
@@ -68,22 +72,31 @@ const onPublish = () => {
   }
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
-  
+
+  socket.emit("getId");
+  const newId = id;
+
   // リプライメッセージがある場合は元のメッセージを追加
   let messageText = chatContent.value
   if (replyMessage.value) {
     messageText += " > " + replyMessage.value.text
   }
-  
-  const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
-  console.log(newMessage)
-  messageList.unshift(newMessage)
+
+  const newMessage = new Message(newId, userName.value, messageText, nowTime, sendLabels)
+
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value = ""
   clearLabeled()
   // リプライメッセージをクリア
   replyMessage.value = null
+}
+
+const onDelete = (message) => {
+  console.log(message)
+  if (confirm("メッセージを削除します. よろしいですか?")){
+  socket.emit("deleteEvent", message);
+  }
 }
 
 function clearLabeled(){
@@ -168,7 +181,10 @@ const onReceiveExit = (data) => {
 
 // サーバから受信した投稿メッセージを画面上に表示する
 const onReceivePublish = (data) => {
-  chatList.unshift(data.user + "さん: " + data.text)
+  //chatList.unshift(data.user + "さん: " + data.text)
+  messageList.unshift(data)
+
+  console.log(messageList)
 }
 
 // 参加者一覧を更新
@@ -182,10 +198,23 @@ const onReceiveUpdateParticipants = (data) => {
 const onGetMessages = (data) => {
   data.forEach(function(element, index, array) {
     const message = Object.assign(new Message(), element)
-    chatList.push(message.user + "さん: " + message.text)
+    // chatList.push(message.user + "さん: " + message.text)
+    messageList.unshift(message)
   })
 }
 
+const onReceiveDeleteMessages = (data) => {
+
+  let indexToRemove = messageList.findIndex(message => message.id === data.id);
+
+  if (indexToRemove !== -1) {
+    messageList.splice(indexToRemove, 1);
+  }
+}
+
+const onReceiveNewId = (data) => {
+  id = data;
+}
 // #endregion
 
 // #region local methods
@@ -215,10 +244,19 @@ const registerSocketEvent = () => {
   socket.on("getMessages", (data) => {
     onGetMessages(data)
   })
+
+  socket.on("deleteMessages", (data) => {
+    onReceiveDeleteMessages(data)
+  })
+
+  socket.on("newId", (data) => {
+    onReceiveNewId(data)
+  })
 }
 // #endregion
 
 socket.emit("getMessages", "")
+socket.emit("getId");
 
 //ctrl+enter or command+enter で投稿
 const onKeydownPublish = (e) =>{
@@ -267,27 +305,33 @@ const onKeydownPublish = (e) =>{
           </ul>
         </div>
         */ -->
-        <div class="mt-5" v-if="chatList.length !== 0">
+        <div class="mt-5" v-if="messageList.length !== 0">
         <div v-if="!(isEqualArray(isSelected, [false, false]))">
           <ul>
             <li class="item mt-4" v-for="(message, i) in messageList.filter(message => select(message.isLabeled, isSelected))" :key="i">
             <div class="chat-item">
-              <span class="chat-text">{{ message.txt }}</span>
+              <span class="chat-text">
+                {{ message.user + "さん: " + message.text }}
+              </span>
               <button class="reply-button" @click="onReply(message.txt, i)" title="リプライ">
                 <span class="material-icons">reply</span>
               </button>
+              <button class="button-normal" @click="onDelete(messageList[i])">削除</button>
             </div>
           </li>
           </ul>
         </div>
         <div v-else>
         <ul>
-          <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
+          <li class="item mt-4" v-for="(message, i) in messageList" :key="i">
             <div class="chat-item">
-              <span class="chat-text">{{ chat }}</span>
+              <span class="chat-text">
+                {{ message.user + "さん: " + message.text }}
+              </span>
               <button class="reply-button" @click="onReply(chat, i)" title="リプライ">
                 <span class="material-icons">reply</span>
               </button>
+              <button class="button-normal" @click="onDelete(messageList[i])">削除</button>
             </div>
           </li>
         </ul>
@@ -354,7 +398,6 @@ const onKeydownPublish = (e) =>{
       <button type="button" class="button-normal button-exit" @click="onExit">退室</button>
     </router-link>
     </div>
-  </div>
   </div>
   </div>
 </template>
@@ -643,6 +686,7 @@ const onKeydownPublish = (e) =>{
   padding: 5px 0;   
   color: #333;   
 }
+
 .menu-labels .menu-title {
   font-size: 1rem;
   color: #777;
