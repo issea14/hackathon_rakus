@@ -39,10 +39,6 @@ const isLabeled = reactive([false, false])
 // isLabeled.value = [false, false]
 // #endregion
 
-const getId = () => {
-  id+=1;
-  return id;
-}
 
 // #region lifecycle
 onMounted(() => {
@@ -56,7 +52,8 @@ const onPublish = () => {
   //console.log("a")
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
-  const newId = getId();
+  socket.emit("getId");
+  const newId = id;
   const newMessage = new Message(newId, userName.value, chatContent.value, nowTime, sendLabels)
   console.log(newMessage)
   messageList.unshift(newMessage);
@@ -132,6 +129,10 @@ const onReceiveDeleteMessages = (data) => {
     messageList.splice(indexToRemove, 1);
   }
 }
+
+const onReceiveNewId = (data) => {
+  id = data;
+}
 // #endregion
 
 // #region local methods
@@ -163,6 +164,10 @@ const registerSocketEvent = () => {
 
   socket.on("deleteMessages", (data) => {
     onReceiveDeleteMessages(data)
+  })
+
+  socket.on("newId", (data) => {
+    onReceiveNewId(data)
   })
 }
 // #endregion

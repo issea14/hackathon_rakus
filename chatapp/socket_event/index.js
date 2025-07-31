@@ -1,11 +1,17 @@
 const clients = new Map()
 let messages = []
+let id = 1
 
 export default (io, socket) => {
   const updateParticipants = () => {
     let participant = Array.from(clients.values()).join(", ")
     io.sockets.emit("updateParticipants", participant);
   }
+
+  socket.on("getId", () => {
+    id += 1;
+    socket.emit("newId", id);
+  })
 
   // 入室メッセージをクライアントに送信する
   socket.on("enterEvent", (data) => {
