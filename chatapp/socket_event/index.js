@@ -1,7 +1,10 @@
 import { GoogleGenAI } from "@google/genai"
+import dotenv from "dotenv"
+
+dotenv.config()
 
 const ai = new GoogleGenAI({
-  apiKey: "YOUR_API_KEY_HERE"
+  apiKey: process.env.GEMINI_API_KEY || "YOUR_API_KEY_HERE"
 });
 
 const clients = new Map()
@@ -81,7 +84,7 @@ ${chatHistory}
       io.sockets.emit("updateGeminiResponse", response.text)
     } catch (error) {
       console.error("Gemini API Error:", error);
-      io.sockets.emit("updateGeminiResponse", response.text)
+      io.sockets.emit("updateGeminiResponse", error)
     }
   })
 }
