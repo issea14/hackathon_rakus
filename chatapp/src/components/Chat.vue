@@ -104,6 +104,7 @@ const onReceiveExit = (data) => {
 // サーバから受信した投稿メッセージを画面上に表示する
 const onReceivePublish = (data) => {
   chatList.unshift(data.user + "さん: " + data.text)
+  messageList.unshift(data)
 }
 
 // 参加者一覧を更新
