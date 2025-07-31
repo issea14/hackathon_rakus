@@ -122,7 +122,8 @@ const select = function (messageLabels, selectedLabels){
 const onChangeSelection = () =>{
   console.log(isSelected)
   // console.log(chatList[0])
-  console.log(isEqualArray(messageList[0].isLabeled, isSelected))
+  console.log(messageList[0].isLabeled)
+  console.log(messageList[0])
 }
 
 // リプライをクリアする処理
@@ -141,7 +142,7 @@ const onPublish = () => {
   }
 
   const nowTime = new Date()
-  // const sendLabels = [...isLabeled]
+  const sendLabels = [...isLabeled]
 
   socket.emit("getId");
   const newId = id;
@@ -152,7 +153,7 @@ const onPublish = () => {
     messageText += " > " + replyMessage.value.text
   }
 
-  const sendLabels = labels.filter((label, index) => isLabeled[index])
+  // const sendLabels = labels.filter((label, index) => isLabeled[index])
   const newMessage = new Message(newId, userName.value, messageText, nowTime, sendLabels)
 
   socket.emit("publishEvent", newMessage)
@@ -321,13 +322,7 @@ socket.emit("getId");
           <!-- メッセージリスト -->
           <div
             v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter(message => {
-              if (!message.labels) return false;
-              for(let i = 0; i < isSelected.length; i++) {
-                if(isSelected[i] && message.labels.includes(labels[i])) {
-                  return true;
-                }
-              }
-              return false;
+              isEqualArray(isSelected, message.isLabeled)
             }))"
             :key="index"
             :class="[
