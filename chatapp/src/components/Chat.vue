@@ -249,7 +249,7 @@ const onKeydownPublish = (e) =>{
         </label>
       </div>
       <!-- <div v-if = "isSelected === [false, false]"></div> -->
-      /*
+      <!-- /*
       <div class="mt-5" v-if="chatList.length !== 0">
         <div v-if="!(isEqualArray(isSelected, [false, false]))">
           <ul>
@@ -258,7 +258,7 @@ const onKeydownPublish = (e) =>{
             </li>
           </ul>
         </div>
-        */
+        */ -->
         <div class="mt-5" v-if="chatList.length !== 0">
         <div v-if="!(isEqualArray(isSelected, [false, false]))">
           <ul>
@@ -285,7 +285,7 @@ const onKeydownPublish = (e) =>{
         </ul>
         </div>
 
-        /* <ul>
+        <!-- <ul>
           <li class="item mt-4" v-for="(chat, i) in chatList" :key="i">
             <div class="chat-item">
               <span class="chat-text">{{ chat }}</span>
@@ -294,7 +294,7 @@ const onKeydownPublish = (e) =>{
               </button>
             </div>
           </li>
-        </ul> */
+        </ul> -->
 
       </div>
     </div>
@@ -309,7 +309,7 @@ const onKeydownPublish = (e) =>{
     <span></span>
     <span></span>
   </label>
-
+  
   <div class="menu-content">
 
     <div class="menu-horizontal-container">
@@ -329,12 +329,12 @@ const onKeydownPublish = (e) =>{
 
       <div class="vertical-divider"></div>
 
-      /* <div class="menu-item menu-labels">
+      <!-- /* <div class="menu-item menu-labels">
         <p class="menu-title">ラベル一覧</p>
         <ul>
           <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
         </ul>
-      </div> */
+      </div> */ -->
       <div class="menu-item menu-labels">
       <p class="menu-title">ラベル一覧</p>
         <div class="selected" v-for = "(checked, i) in isSelected" :key = i>
@@ -352,6 +352,7 @@ const onKeydownPublish = (e) =>{
       <button type="button" class="button-normal button-exit" @click="onExit">退室</button>
     </router-link>
     </div>
+  </div>
   </div>
   </div>
 </template>
