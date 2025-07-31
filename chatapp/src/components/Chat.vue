@@ -84,6 +84,14 @@ const onReceivePublish = (data) => {
 const onReceiveUpdateParticipants = (data) => {
   participants.value = data
 }
+
+// 過去メッセージを取得
+const onGetMessages = (data) => {
+  data.forEach(function(element, index, array) {
+    const message = Object.assign(new Message(), element)
+    chatList.push(message.user + "さん: " + message.text)
+  })
+}
 // #endregion
 
 // #region local methods
@@ -108,8 +116,14 @@ const registerSocketEvent = () => {
   socket.on("updateParticipants", (data) => {
     onReceiveUpdateParticipants(data);
   })
+
+  socket.on("getMessages", (data) => {
+    onGetMessages(data)
+  })
 }
 // #endregion
+
+socket.emit("getMessages", "")
 
 //ctrl+enter or command+enter で投稿
 const onKeydownPublish = (e) =>{
@@ -117,6 +131,7 @@ const onKeydownPublish = (e) =>{
     onPublish();
   }
 }
+
 </script>
 
 <template>
