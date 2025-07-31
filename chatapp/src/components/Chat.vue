@@ -3,6 +3,18 @@ import { inject, ref, reactive, onMounted, vModelCheckbox } from "vue"
 import socketManager from '../socketManager.js'
 import io from "socket.io-client"
 
+class Message {
+  constructor(user, text, dateTime, labels){
+    this.user = user;
+    this.text = text;
+    this.dateTime = dateTime;
+    this.labels = labels;
+  }
+}
+const label_1 = "重要"
+const label_2 = "交通手段"
+const labels = [label_1, label_2]
+
 // #region global state
 const userName = inject("userName")
 // #endregion
@@ -13,6 +25,7 @@ const socket = socketManager.getInstance()
 
 // #region reactive variable
 const chatContent = ref("")
+const participants = ref("")
 const chatList = reactive([])
 // #endregion
 
@@ -26,7 +39,10 @@ onMounted(() => {
 // 投稿メッセージをサーバに送信する
 const onPublish = () => {
   //console.log("a")
-  socket.emit("publishEvent", userName.value + "さん: " + chatContent.value);
+  const nowTime = new Date();
+  const newMessage = new Message(userName.value, chatContent.value, nowTime, labels)
+  //console.log(newMessage)
+  socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value =""
 
@@ -34,7 +50,9 @@ const onPublish = () => {
 
 // 退室メッセージをサーバに送信する
 const onExit = () => {
+
   socket.emit("exitEvent", userName.value + "さんが退室しました。")
+
 }
 
 // メモを画面上に表示する
@@ -59,7 +77,20 @@ const onReceiveExit = (data) => {
 
 // サーバから受信した投稿メッセージを画面上に表示する
 const onReceivePublish = (data) => {
-  chatList.unshift(data)
+  chatList.unshift(data.user + "さん: " + data.text)
+}
+
+// 参加者一覧を更新
+const onReceiveUpdateParticipants = (data) => {
+  participants.value = data
+}
+
+// 過去メッセージを取得
+const onGetMessages = (data) => {
+  data.forEach(function(element, index, array) {
+    const message = Object.assign(new Message(), element)
+    chatList.push(message.user + "さん: " + message.text)
+  })
 }
 // #endregion
 
@@ -80,8 +111,27 @@ const registerSocketEvent = () => {
   socket.on("publishEvent", (data) => {
     onReceivePublish(data)
   })
+
+  // 参加者一覧更新を受け取ったら実行
+  socket.on("updateParticipants", (data) => {
+    onReceiveUpdateParticipants(data);
+  })
+
+  socket.on("getMessages", (data) => {
+    onGetMessages(data)
+  })
 }
 // #endregion
+
+socket.emit("getMessages", "")
+
+//ctrl+enter or command+enter で投稿
+const onKeydownPublish = (e) =>{
+  if (e.ctrlKey || e.metaKey){
+    onPublish();
+  }
+}
+
 </script>
 
 <template>
@@ -89,7 +139,10 @@ const registerSocketEvent = () => {
     <h1 class="text-h3 font-weight-medium">Vue.js Chat チャットルーム</h1>
     <div class="mt-10">
       <p>ログインユーザ：{{ userName }}さん</p>
-      <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent"></textarea>
+
+      <p>参加者: {{ participants }}</p>
+      <textarea variant="outlined" placeholder="投稿文を入力してください" rows="4" class="area" v-model="chatContent" @keydown.enter="onKeydownPublish"></textarea>
+
       <div class="mt-5">
         <button class="button-normal" @click="onPublish">投稿</button>
         <button class="button-normal util-ml-8px" @click="onMemo">メモ</button>
@@ -152,6 +205,7 @@ const registerSocketEvent = () => {
 
 .item {
   display: block;
+  white-space: pre-line;
 }
 
 .util-ml-8px {
@@ -324,3 +378,4 @@ const registerSocketEvent = () => {
 }
 
 </style>
+

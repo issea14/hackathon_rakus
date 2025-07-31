@@ -1,10 +1,40 @@
-body {
-  padding: 2em;
+body { /* グローバルなスタイル設定 */
+  margin: 0; /* ページ全体のマージンをリセット */
+  padding: 0; /* ページ全体のパディングをリセット */
+  font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* フォントファミリーの設定 */
+  background-color: #f5f7fa; /* ページ全体の背景色 */
 }
 
-.button-normal {
-  border: 1px solid #555;
-  background-color: #eee;
-  border-radius: 4px;
-  padding: 4px;
+.button-normal { /* 通常のボタンスタイル */
+  border: none; /* ボーダーをなしに設定 */
+  background: linear-gradient(135deg, #3498db, #2980b9); /* グラデーション背景 */
+  color: white; /* 文字色を白に設定 */
+  border-radius: 8px; /* 角を丸くする */
+  padding: 12px 24px; /* パディングの設定 */
+  font-size: 14px; /* フォントサイズの設定 */
+  font-weight: 600; /* フォントの太さを設定 */
+  cursor: pointer; /* カーソルをポインターに変更 */
+  transition: all 0.3s ease; /* ホバーやアクティブ時の変化をスムーズにする */
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); /* ボックスシャドウの設定 */
+}
+
+.button-normal:hover { /* ホバー時のスタイル */
+  background: linear-gradient(135deg, #2980b9, #1f639a); /* グラデーションの変更 */
+  transform: translateY(-2px); /* 少し上に移動 */
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4); /* ボックスシャドウの強調 */
+}
+
+.button-normal:active { /* アクティブ時のスタイル */
+  transform: translateY(0); /* 元の位置に戻す */
+}
+
+/* Vuetifyとの統一性を保つためのグローバルスタイル */
+.v-theme--light {
+  --v-theme-primary: #3498db;
+  --v-theme-secondary: #95a5a6;
+  --v-theme-accent: #e74c3c;
+  --v-theme-error: #e74c3c;
+  --v-theme-info: #3498db;
+  --v-theme-success: #27ae60;
+  --v-theme-warning: #f39c12;
 }
