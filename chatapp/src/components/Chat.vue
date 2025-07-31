@@ -11,6 +11,7 @@ class Message {
     this.labels = labels;
   }
 }
+
 const label_1 = "重要"
 const label_2 = "交通手段"
 const label_3 = "観光場所"
@@ -29,8 +30,12 @@ const chatListRef = ref(null)
 // #region reactive variable
 const chatContent = ref("")
 const participants = ref("")
+const participantsList = ref([])
 const chatList = reactive([])
+const messageList = reactive([])
 const isLabeled = reactive([false, false, false])
+const isSelected = reactive([false, false, false])
+const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
   { name: "交通手段", color: "#3498db", icon: "mdi-car" },
@@ -75,6 +80,25 @@ function clearLabeled(){
   }
 }
 
+const isEqualArray = function (array1, array2) {
+   var i = array1.length;
+   if (i != array2.length) return false;
+
+   while (i--) {
+     if (array1[i] !== array2[i]) return false;
+   }
+   return true;
+ };
+
+const select = function (messageLabels, selectedLabels){
+  for(let i = 0; i < selectedLabels.length; i++){
+    if(messageLabels[i] && selectedLabels[i]){
+      return true
+    }
+  }
+  return false
+}
+
 const onKeydownPublish = (e) => {
   if (e.ctrlKey || e.metaKey) {
     e.preventDefault()
@@ -90,12 +114,22 @@ const onPublish = () => {
   }
 
   const nowTime = new Date()
-  const sendLabels = labels.filter((label, index) => isLabeled[index])
-  const newMessage = new Message(userName.value, chatContent.value.trim(), nowTime, sendLabels)
 
+  // リプライメッセージがある場合は元のメッセージを追加
+  let messageText = chatContent.value.trim()
+  if (replyMessage.value) {
+    messageText += " > " + replyMessage.value.text
+  }
+
+  const sendLabels = labels.filter((label, index) => isLabeled[index])
+  const newMessage = new Message(userName.value, messageText, nowTime, sendLabels)
+
+  messageList.unshift(newMessage)
   socket.emit("publishEvent", newMessage)
   chatContent.value = ""
   clearLabeled()
+  // リプライメッセージをクリア
+  replyMessage.value = null
   scrollToBottom()
 }
 
@@ -104,9 +138,35 @@ const onExit = () => {
   router.push({ name: "login" })
 }
 
+const onReset = () => {
+  for(let i = 0; i < isSelected.length; i++){
+    isSelected[i] = false
+  }
+}
+
+const onChangeSelection = () =>{
+  console.log(isSelected)
+}
+
+// リプライボタンがクリックされた時の処理
+const onReply = (message) => {
+  replyMessage.value = {
+    text: message.text,
+    user: message.user,
+    timestamp: message.dateTime
+  }
+  console.log("リプライ先:", replyMessage.value)
+}
+
+// リプライをクリアする処理
+const clearReply = () => {
+  replyMessage.value = null
+}
+
 
 const onReceivePublish = (data) => {
   chatList.unshift(data)
+  messageList.unshift(data)
   scrollToBottom()
 }
 
@@ -119,6 +179,7 @@ const onGetMessages = (data) => {
   data.forEach(function(element, index, array) {
     const message = Object.assign(new Message(), element)
     chatList.push(message)
+    messageList.push(message)
   })
   scrollToBottom()
 }
@@ -126,14 +187,6 @@ const onGetMessages = (data) => {
 
 // #region local methods
 const registerSocketEvent = () => {
-  socket.on("enterEvent", (data) => {
-    onReceiveEnter(data)
-  })
-
-  socket.on("exitEvent", (data) => {
-    onReceiveExit(data)
-  })
-
   socket.on("publishEvent", (data) => {
     onReceivePublish(data)
   })
@@ -174,10 +227,35 @@ const registerSocketEvent = () => {
         </div>
 
         <div class="menu-item menu-labels">
-          <p class="menu-title">ラベル一覧</p>
-          <ul>
-            <li v-for="(label, i) in labels" :key="i"><a href="#">{{ label }}</a></li>
-          </ul>
+          <p class="menu-title">ラベルフィルター</p>
+          <div class="filter-checkboxes">
+            <label
+              v-for="(label, i) in labels"
+              :key="i"
+              class="filter-checkbox"
+            >
+              <input
+                type="checkbox"
+                v-model="isSelected[i]"
+                @change="onChangeSelection"
+                class="checkbox-input"
+              >
+              <v-icon
+                :icon="availableLabels[i].icon"
+                size="16"
+                :color="isSelected[i] ? availableLabels[i].color : '#95a5a6'"
+              ></v-icon>
+              <span class="filter-text">{{ label }}</span>
+            </label>
+          </div>
+          <v-btn
+            variant="outlined"
+            size="small"
+            @click="onReset"
+            class="reset-filter-btn"
+          >
+            フィルターリセット
+          </v-btn>
         </div>
 
         <div class="menu-item menu-actions">
@@ -200,7 +278,15 @@ const registerSocketEvent = () => {
         <div class="messages-container">
           <!-- メッセージリスト -->
           <div
-            v-for="(message, index) in chatList"
+            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false]) ? chatList : messageList.filter(message => {
+              if (!message.labels) return false;
+              for(let i = 0; i < isSelected.length; i++) {
+                if(isSelected[i] && message.labels.includes(labels[i])) {
+                  return true;
+                }
+              }
+              return false;
+            }))"
             :key="index"
             :class="[
               'message-item',
@@ -212,10 +298,9 @@ const registerSocketEvent = () => {
             <div class="message-bubble">
               <div class="message-header">
                 <span class="message-user">{{ message.user }}</span>
-                <div class="message-meta">
-                  <span class="message-date">{{ formatDate(message.dateTime) }}</span>
-                  <span class="message-time">{{ formatTime(message.dateTime) }}</span>
-                </div>
+                <button class="reply-button" @click="onReply(message)" title="リプライ">
+                  <v-icon size="16">mdi-reply</v-icon>
+                </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
               <div v-if="message.labels && message.labels.length > 0" class="message-labels">
@@ -234,6 +319,10 @@ const registerSocketEvent = () => {
                   {{ label }}
                 </v-chip>
               </div>
+              <div class="message-meta">
+                <span class="message-time">{{ formatTime(message.dateTime) }}</span>
+                <span class="message-date">{{ formatDate(message.dateTime) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -242,6 +331,23 @@ const registerSocketEvent = () => {
       <!-- 投稿エリア -->
       <div class="chat-input-area">
         <div class="input-container">
+          <!-- リプライ表示 -->
+          <div v-if="replyMessage" class="reply-section">
+            <div class="reply-message">
+              <v-icon color="primary" size="16">mdi-reply</v-icon>
+              <span class="reply-text">{{ replyMessage.user }}さんへの返信: {{ replyMessage.text }}</span>
+              <v-btn
+                icon
+                size="x-small"
+                variant="text"
+                @click="clearReply"
+                class="clear-reply-btn"
+              >
+                <v-icon size="16">mdi-close</v-icon>
+              </v-btn>
+            </div>
+          </div>
+
           <!-- ラベル選択 -->
           <div class="label-selection">
             <p class="label-title">ラベルを選択:</p>
@@ -432,6 +538,79 @@ const registerSocketEvent = () => {
   margin-bottom: 4px;
   font-size: 0.8rem;
   opacity: 0.7;
+}
+
+.reply-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reply-button:hover {
+  background: rgba(52, 152, 219, 0.2);
+}
+
+.reply-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #3498db;
+}
+
+.reply-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reply-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.clear-reply-btn {
+  min-width: auto !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.filter-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.filter-checkbox:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-text {
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.reset-filter-btn {
+  width: 100%;
+  margin-top: 0.5rem;
 }
 
 .message-user {
@@ -687,29 +866,6 @@ const registerSocketEvent = () => {
   font-size: 0.9em;
   color: #777;
   margin: 0 0 10px 0;
-}
-
-.menu-labels ul {
-  padding: 0;
-  list-style: none;
-}
-
-.menu-labels ul li {
-  list-style: none;
-  margin-bottom: 20px;
-}
-
-.menu-labels ul li a {
-  display: block;
-  padding: 10px 0;
-  color: #333;
-  text-decoration: none;
-  transition: background-color 0.2s;
-  font-size: 1.2rem;
-}
-
-.menu-labels ul li a:hover {
-  background-color: #e9e9e9;
 }
 
 .menu-actions {
