@@ -78,8 +78,10 @@ ${chatHistory}
         contents: prompt,
       });
       console.log("Gemini Response:", response.text);
+      io.sockets.emit("updateGeminiResponse", response.text)
     } catch (error) {
       console.error("Gemini API Error:", error);
+      io.sockets.emit("updateGeminiResponse", response.text)
     }
   })
 }
