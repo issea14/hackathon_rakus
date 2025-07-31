@@ -352,9 +352,11 @@ socket.emit("getId");
               <div class="message-header">
                 <span class="message-user">{{ message.user }}</span>
                 <button class="reply-button" @click="onReply(message)" title="リプライ">
-                  <v-icon size="16">mdi-reply</v-icon>
+                  <span class="material-icons">reply</span>
                 </button>
-                <button class="delete-button" v-if="message.user == userName" @click="onDelete(message)">✕</button>
+                <button class="delete-button" v-if="message.user == userName" @click="onDelete(message)">
+                  <span class="material-icons">delete</span>
+                </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
               <div v-if="message.labels && message.labels.length > 0" class="message-labels">
@@ -397,7 +399,7 @@ socket.emit("getId");
                 @click="clearReply"
                 class="clear-reply-btn"
               >
-                <v-icon size="16">mdi-close</v-icon>
+              <span class="material-icons">reply</span>
               </v-btn>
             </div>
           </div>
