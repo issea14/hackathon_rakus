@@ -400,7 +400,6 @@ const onKeydownPublish = (e) =>{
     </div>
   </div>
   </div>
-  </div>
 </template>
 
 <style scoped>
