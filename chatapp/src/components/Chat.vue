@@ -41,7 +41,7 @@ const onPublish = () => {
   //console.log("a")
   const nowTime = new Date();
   const newMessage = new Message(userName.value, chatContent.value, nowTime, labels)
-  console.log(newMessage)
+  //console.log(newMessage)
   socket.emit("publishEvent", newMessage);
   // 入力欄を初期化
   chatContent.value =""
