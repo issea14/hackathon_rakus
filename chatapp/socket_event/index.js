@@ -1,3 +1,9 @@
+import { GoogleGenAI } from "@google/genai"
+
+const ai = new GoogleGenAI({
+  apiKey: "YOUR_API_KEY_HERE"
+});
+
 const clients = new Map()
 let messages = []
 let id = 1
@@ -52,5 +58,28 @@ export default (io, socket) => {
 
   socket.on("getMessages", (data) => {
     socket.emit("getMessages", messages)
+  })
+
+  socket.on("requestGemini", async (data) => {
+    const chatHistory = messages.map(message => 
+      `${message.user}: ${message.text}`
+    ).join('\n');
+
+    const prompt = `以下のチャット履歴を要約して、重要なポイントをまとめてください(新しいチャットが上にあり、古いチャットが下になっています。)：
+
+${chatHistory}
+
+重要な情報、決定事項、注目すべき点を整理して、簡潔にまとめてください。特に、「決まっていること」「やらなければいけないこと」「相談事項」をまとめてください。`;
+    console.log("DEBUG(prompt): " + prompt)
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+      console.log("Gemini Response:", response.text);
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+    }
   })
 }
