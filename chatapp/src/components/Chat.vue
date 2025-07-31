@@ -136,6 +136,7 @@ const registerSocketEvent = () => {
 
 .item {
   display: block;
+  white-space: pre-line;
 }
 
 .util-ml-8px {
