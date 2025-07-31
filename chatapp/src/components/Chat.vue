@@ -45,6 +45,10 @@ onMounted(() => {
 // 投稿メッセージをサーバに送信する
 const onPublish = () => {
   //console.log("a")
+  if (chatContent.value.trim() === "") {
+    alert("投稿内容を入力してください")
+    return
+  }
   const nowTime = new Date();
   const sendLabels = [...isLabeled]
   const newMessage = new Message(userName.value, chatContent.value, nowTime, sendLabels)
