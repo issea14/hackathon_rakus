@@ -1,4 +1,5 @@
 const clients = new Map()
+const messages = []
 
 export default (io, socket) => {
   const updateParticipants = () => {
@@ -23,6 +24,8 @@ export default (io, socket) => {
 
   // 投稿メッセージを送信する
   socket.on("publishEvent", (data) => {
+    messages.unshift(data)
+    console.log(messages)
     io.sockets.emit("publishEvent", data)
   })
 
@@ -31,5 +34,9 @@ export default (io, socket) => {
     clients.delete(socket.id)
     updateParticipants()
     console.log(reason)
+  })
+
+  socket.on("getMessages", (data) => {
+    socket.emit("getMessages", messages)
   })
 }
