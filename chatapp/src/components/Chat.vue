@@ -300,9 +300,20 @@ socket.emit("getId");
             <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
           </label>
         </div>
-        <button type="button" class="button-normal button-reset" @click="onReset">絞り込みをリセット</button>
+        <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
       </div>
     </div>
+    <div class="exit-section">
+        <v-btn
+          @click="onExit"
+          block
+          varilant="outlined"
+          color="success"
+          class="exit-main-button"
+        >
+          退室
+        </v-btn>
+      </div>
   </div>
   </div>
 
@@ -835,7 +846,7 @@ socket.emit("getId");
   display: block;
   width: 33px;
   height: 33px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(0, 0, 0);
   backdrop-filter: blur(10px);
   border-radius: 50%;
   position: relative;
@@ -845,7 +856,7 @@ socket.emit("getId");
 }
 
 .menu-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(176, 176, 176);
 }
 
 .menu-btn span {
@@ -955,10 +966,11 @@ socket.emit("getId");
   margin-right: 15px;
 }
 
-.user-name {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 1.2rem;
+
+.user-name{
+  font-size: 1rem;
+  color: #777;
+  margin: 0 0 10px 0;
 }
 
 .menu-labels .menu-title {
