@@ -169,7 +169,7 @@ const onPublish = () => {
 const onDelete = (message) => {
   console.log(message)
   if (confirm("メッセージを削除します. よろしいですか?")){
-  socket.emit("deleteEvent", message);
+    socket.emit("deleteEvent", message);
   }
 }
 
@@ -343,6 +343,7 @@ socket.emit("getId");
                 <button class="reply-button" @click="onReply(message)" title="リプライ">
                   <v-icon size="16">mdi-reply</v-icon>
                 </button>
+                <button class="delete-button" v-if="message.user == userName" @click="onDelete(message)">✕</button>
               </div>
               <div class="message-content">{{ message.text }}</div>
               <div v-if="message.labels && message.labels.length > 0" class="message-labels">
@@ -597,6 +598,22 @@ socket.emit("getId");
 
 .reply-button:hover {
   background: rgba(52, 152, 219, 0.2);
+}
+
+.delete-button {
+  background: rgb(210, 29, 29);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button:hover {
+  background: rgb(255, 41, 41);
 }
 
 .reply-section {
