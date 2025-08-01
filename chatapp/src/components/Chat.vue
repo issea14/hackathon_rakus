@@ -275,7 +275,6 @@ const registerSocketEvent = () => {
 }
 // #endregion
 
-socket.emit("getMessages", "")
 socket.emit("getId");
 
 </script>
