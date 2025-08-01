@@ -104,7 +104,7 @@ const isEqualArray = function (array1, array2) {
   console.log(array1[0], array2[0])
    var i = array1.length;
    if (i != array2.length) return false;
-  
+
    while (i--) {
      if (array1[i] !== array2[i]) return false;
    }
@@ -171,7 +171,7 @@ const onPublish = () => {
 const onDelete = (message) => {
   console.log(message)
   if (confirm("メッセージを削除します. よろしいですか?")){
-  socket.emit("deleteEvent", message);
+    socket.emit("deleteEvent", message);
   }
 }
 
@@ -259,6 +259,7 @@ const registerSocketEvent = () => {
 }
 // #endregion
 
+socket.emit("getMessages", "")
 socket.emit("getId");
 
 </script>
@@ -273,7 +274,7 @@ socket.emit("getId");
     <span></span>
     <span></span>
   </label>
-  
+
   <div class="menu-content">
 
     <div class="menu-horizontal-container">
@@ -301,9 +302,20 @@ socket.emit("getId");
             <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
           </label>
         </div>
-        <button type="button" class="button-normal button-reset" @click="onReset">絞り込みをリセット</button>
+        <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
       </div>
     </div>
+    <div class="exit-section">
+        <v-btn
+          @click="onExit"
+          block
+          varilant="outlined"
+          color="success"
+          class="exit-main-button"
+        >
+          退室
+        </v-btn>
+      </div>
   </div>
   </div>
 
@@ -343,7 +355,7 @@ socket.emit("getId");
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <!-- <div v-if="message.labels && message.labels.length > 0" class="message-labels">
                 <v-chip
                   v-for="label in message.labels"
                   :key="label"
@@ -358,7 +370,7 @@ socket.emit("getId");
                   ></v-icon>
                   {{ label }}
                 </v-chip>
-              </div>
+              </div> -->
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
@@ -591,6 +603,22 @@ socket.emit("getId");
 
 .reply-button:hover {
   background: rgba(52, 152, 219, 0.2);
+}
+
+.delete-button {
+  background: rgb(210, 29, 29);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button:hover {
+  background: rgb(255, 41, 41);
 }
 
 .reply-section {
@@ -829,7 +857,7 @@ socket.emit("getId");
   display: block;
   width: 33px;
   height: 33px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(0, 0, 0);
   backdrop-filter: blur(10px);
   border-radius: 50%;
   position: relative;
@@ -839,7 +867,7 @@ socket.emit("getId");
 }
 
 .menu-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(176, 176, 176);
 }
 
 .menu-btn span {
@@ -949,10 +977,11 @@ socket.emit("getId");
   margin-right: 15px;
 }
 
-.user-name {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 1.2rem;
+
+.user-name{
+  font-size: 1rem;
+  color: #777;
+  margin: 0 0 10px 0;
 }
 
 .menu-labels .menu-title {
@@ -969,11 +998,11 @@ socket.emit("getId");
 .label-button {
   display: flex;
   align-items: center;
-  gap: 12px; 
+  gap: 12px;
   width: 100%;
   background: none;
   border: none;
-  padding: 10px 5px; 
+  padding: 10px 5px;
   cursor: pointer;
   text-align: left;
   font-size: 1.2rem;
@@ -1083,11 +1112,11 @@ socket.emit("getId");
 
 .menu-horizontal-container {
   display: flex;
-  justify-content: space-evenly;  
+  justify-content: space-evenly;
   align-items: flex-start;
   width: 100%;
   max-width: 340px;
-  border-bottom: 1px solid #ddd;  
+  border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
 
@@ -1099,10 +1128,10 @@ socket.emit("getId");
 
 .menu-horizontal-container .menu-item,
 .menu-horizontal-container .active-user {
-  border-bottom: none;  
-  padding: 0;  
-  width: auto;  
-  max-width: none;  
+  border-bottom: none;
+  padding: 0;
+  width: auto;
+  max-width: none;
 }
 .menu-horizontal-container .menu-profile {
   padding-bottom: 10px;
@@ -1111,7 +1140,7 @@ socket.emit("getId");
 .vertical-divider {
   width: 1px;
   align-self: stretch;
-  background-color: #ccc;  
+  background-color: #ccc;
 }
 
 .menu-horizontal-container .active-user {
@@ -1120,8 +1149,8 @@ socket.emit("getId");
 
 .menu-horizontal-container .active-user .user-name div {
   font-size: 1.2rem;
-  padding: 5px 0;   
-  color: #333;   
+  padding: 5px 0;
+  color: #333;
 }
 
 .menu-labels .menu-title {
@@ -1160,7 +1189,7 @@ socket.emit("getId");
 
 .checkbox-label .label-input {
   /* チェックボックスを右端に配置 */
-  margin-left: auto; 
+  margin-left: auto;
   /* サイズを少し大きくする */
   width: 18px;
   height: 18px;
