@@ -60,6 +60,7 @@ const availableLabels = reactive([
   { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
   { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
 ])
+const summaryDocument = ref("")
 // #endregion
 
 
@@ -130,6 +131,12 @@ const onChangeSelection = () =>{
 // リプライをクリアする処理
 const clearReply = () => {
   replyMessage.value = null
+}
+
+const generateSummary = () => {
+  debugger
+  socket.emit("requestGemini", "")
+  isLoading = true
 }
 
 // #endregion
@@ -232,6 +239,12 @@ const onReceiveDeleteMessages = (data) => {
 const onReceiveNewId = (data) => {
   id = data;
 }
+
+const onUpdateGeminiResponse = (data) => {
+  debugger
+  summaryDocument.value = data
+  isLoading = false
+}
 // #endregion
 
 // #region local methods
@@ -255,6 +268,10 @@ const registerSocketEvent = () => {
 
   socket.on("newId", (data) => {
     onReceiveNewId(data)
+  })
+
+  socket.on("updateGeminiResponse", (data) => {
+    onUpdateGeminiResponse(data)
   })
 }
 // #endregion
