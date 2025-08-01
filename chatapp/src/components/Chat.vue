@@ -54,11 +54,11 @@ const isSelected = reactive([false, false, false, false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
-  { name: "旅行先", color: "#3498db", icon: "mdi-map" },
+  { name: "旅行先", color: "#349834", icon: "mdi-map" },
   { name: "日程", color: "#27ae60", icon: "mdi-calendar" },
   { name: "交通手段", color: "#f39c12", icon: "mdi-car" },
   { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
-  { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
+  { name: "予算", color: "#a9a029", icon: "mdi-currency-usd" }
 ])
 // #endregion
 
@@ -347,14 +347,19 @@ socket.emit("getId");
                 <v-chip
                   v-if="message.isLabeled[i]"
                   size="x-small"
-                  :color="availableLabels.find(l => l.name == label[i])?.color"
+                  :color="availableLabels.find(l => l.name == labels[i])?.color"
                   class="message-label"
+                  variant="flat"
                 >
+                <span class="material-icons label-icons">{{ labelIcons[i] }}</span>
+                <!--
                   <v-icon
-                    size="7"
-                    :icon="availableLabels.find(l => l.name == label[i])?.icon"
+                    size="x-small"
+                    :icon="availableLabels.find(l => l.name == labels[i])?.icon"
                     start
                   ></v-icon>
+                -->
+
                   {{ labels[i] }}
                 </v-chip>
               </div>
@@ -1173,4 +1178,7 @@ socket.emit("getId");
   font-size: 1.1rem;
 }
 
+.label-icons {
+  font-size: 12px;
+}
 </style>
