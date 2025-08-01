@@ -101,6 +101,7 @@ function clearLabeled(){
 }
 
 const isEqualArray = function (array1, array2) {
+  console.log(array1[0], array2[0])
    var i = array1.length;
    if (i != array2.length) return false;
 
@@ -122,7 +123,8 @@ const select = function (messageLabels, selectedLabels){
 const onChangeSelection = () =>{
   console.log(isSelected)
   // console.log(chatList[0])
-  console.log(isEqualArray(messageList[0].isLabeled, isSelected))
+  console.log(messageList[0].isLabeled)
+  console.log(messageList[0])
 }
 
 // リプライをクリアする処理
@@ -141,7 +143,7 @@ const onPublish = () => {
   }
 
   const nowTime = new Date()
-  // const sendLabels = [...isLabeled]
+  const sendLabels = [...isLabeled]
 
   socket.emit("getId");
   const newId = id;
@@ -152,7 +154,7 @@ const onPublish = () => {
     messageText += " > " + replyMessage.value.text
   }
 
-  const sendLabels = labels.filter((label, index) => isLabeled[index])
+  // const sendLabels = labels.filter((label, index) => isLabeled[index])
   const newMessage = new Message(newId, userName.value, messageText, nowTime, sendLabels)
 
   socket.emit("publishEvent", newMessage)
@@ -169,7 +171,7 @@ const onPublish = () => {
 const onDelete = (message) => {
   console.log(message)
   if (confirm("メッセージを削除します. よろしいですか?")){
-  socket.emit("deleteEvent", message);
+    socket.emit("deleteEvent", message);
   }
 }
 
@@ -257,7 +259,6 @@ const registerSocketEvent = () => {
 }
 // #endregion
 
-socket.emit("getMessages", "")
 socket.emit("getId");
 
 </script>
@@ -265,14 +266,41 @@ socket.emit("getId");
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <div class="chat-container">
-    <div class="hamburger-menu">
+    <div class="ai-summary-menu">
+      <input type="checkbox" id="ai-menu-btn-check">
+      <label for="ai-menu-btn-check" class="menu-btn">
+        <span class="material-icons">description</span>
+      </label>
+      <div class="menu-content">
+        <div class="summary-container">
+          <p class="menu-title">会話の要約</p>
+          <div class="summary-document">
+            <div v-if="isLoadingSummary" class="loading-spinner"></div>
+            <p style="white-space: pre-wrap;">{{ summaryDocument }}</p>
+          </div>
+          <v-btn
+            @click="generateSummary"
+            :loading="isLoadingSummary"
+            color="primary"
+            class="generate-button"
+            block
+            icon
+          >
+            <span class="material-icons">autorenew</span>
+          </v-btn>
+        </div>
+      </div>
+    </div>
+
+
+  <div class="hamburger-menu">
   <input type="checkbox" id="menu-btn-check">
   <label for="menu-btn-check" class="menu-btn">
     <span></span>
     <span></span>
     <span></span>
   </label>
-  
+
   <div class="menu-content">
 
     <div class="menu-horizontal-container">
@@ -300,9 +328,20 @@ socket.emit("getId");
             <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
           </label>
         </div>
-        <button type="button" class="button-normal button-reset" @click="onReset">絞り込みをリセット</button>
+        <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
       </div>
     </div>
+    <div class="exit-section">
+        <v-btn
+          @click="onExit"
+          block
+          varilant="outlined"
+          color="success"
+          class="exit-main-button"
+        >
+          退室
+        </v-btn>
+      </div>
   </div>
   </div>
 
@@ -320,14 +359,8 @@ socket.emit("getId");
         <div class="messages-container">
           <!-- メッセージリスト -->
           <div
-            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter(message => {
-              if (!message.labels) return false;
-              for(let i = 0; i < isSelected.length; i++) {
-                if(isSelected[i] && message.labels.includes(labels[i])) {
-                  return true;
-                }
-              }
-              return false;
+            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter((message) => {
+              return select(isSelected, message.isLabeled)
             }))"
             :key="index"
             :class="[
@@ -341,11 +374,14 @@ socket.emit("getId");
               <div class="message-header">
                 <span class="message-user">{{ message.user }}</span>
                 <button class="reply-button" @click="onReply(message)" title="リプライ">
-                  <v-icon size="16">mdi-reply</v-icon>
+                  <span class="material-icons">reply</span>
+                </button>
+                <button class="delete-button" v-if="message.user == userName" @click="onDelete(message)">
+                  <span class="material-icons">delete</span>
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <!-- <div v-if="message.labels && message.labels.length > 0" class="message-labels">
                 <v-chip
                   v-for="label in message.labels"
                   :key="label"
@@ -360,7 +396,7 @@ socket.emit("getId");
                   ></v-icon>
                   {{ label }}
                 </v-chip>
-              </div>
+              </div> -->
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
@@ -385,7 +421,7 @@ socket.emit("getId");
                 @click="clearReply"
                 class="clear-reply-btn"
               >
-                <v-icon size="16">mdi-close</v-icon>
+                <span class="material-icons">reply</span>
               </v-btn>
             </div>
           </div>
@@ -430,7 +466,7 @@ socket.emit("getId");
                 class="send-button"
                 :disabled="!chatContent.trim()"
               >
-                <v-icon>mdi-send</v-icon>
+                <span class="material-icons">send</span>
               </v-btn>
             </div>
           </div>
@@ -593,6 +629,22 @@ socket.emit("getId");
 
 .reply-button:hover {
   background: rgba(52, 152, 219, 0.2);
+}
+
+.delete-button {
+  background: rgb(210, 29, 29);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button:hover {
+  background: rgb(255, 41, 41);
 }
 
 .reply-section {
@@ -831,7 +883,7 @@ socket.emit("getId");
   display: block;
   width: 33px;
   height: 33px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(0, 0, 0);
   backdrop-filter: blur(10px);
   border-radius: 50%;
   position: relative;
@@ -841,7 +893,7 @@ socket.emit("getId");
 }
 
 .menu-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(176, 176, 176);
 }
 
 .menu-btn span {
@@ -902,8 +954,17 @@ socket.emit("getId");
   margin-bottom: 0;
 }
 
+.ai-summary-menu .menu-content {
+    left: -100%;
+    right: auto;
+}
+
 #menu-btn-check:checked ~ .menu-content {
   right: 0;
+}
+
+#ai-menu-btn-check:checked ~ .menu-content {
+  left: 0;
 }
 
 .menu-content {
@@ -951,10 +1012,11 @@ socket.emit("getId");
   margin-right: 15px;
 }
 
-.user-name {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 1.2rem;
+
+.user-name{
+  font-size: 1rem;
+  color: #777;
+  margin: 0 0 10px 0;
 }
 
 .menu-labels .menu-title {
@@ -971,11 +1033,11 @@ socket.emit("getId");
 .label-button {
   display: flex;
   align-items: center;
-  gap: 12px; 
+  gap: 12px;
   width: 100%;
   background: none;
   border: none;
-  padding: 10px 5px; 
+  padding: 10px 5px;
   cursor: pointer;
   text-align: left;
   font-size: 1.2rem;
@@ -1019,6 +1081,51 @@ socket.emit("getId");
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* AI Summary Menu */
+.ai-summary-menu {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  z-index: 100;
+}
+.ai-summary-menu .menu-btn .material-icons {
+  color: white;
+  font-size: 24px;
+}
+.summary-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 1rem;
+}
+.summary-document {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #333;
+  line-height: 1.6;
+}
+.generate-button {
+  flex-shrink: 0;
+}
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* レスポンシブデザイン */
@@ -1085,11 +1192,11 @@ socket.emit("getId");
 
 .menu-horizontal-container {
   display: flex;
-  justify-content: space-evenly;  
+  justify-content: space-evenly;
   align-items: flex-start;
   width: 100%;
   max-width: 340px;
-  border-bottom: 1px solid #ddd;  
+  border-bottom: 1px solid #ddd;
   padding: 20px 0;
 }
 
@@ -1101,10 +1208,10 @@ socket.emit("getId");
 
 .menu-horizontal-container .menu-item,
 .menu-horizontal-container .active-user {
-  border-bottom: none;  
-  padding: 0;  
-  width: auto;  
-  max-width: none;  
+  border-bottom: none;
+  padding: 0;
+  width: auto;
+  max-width: none;
 }
 .menu-horizontal-container .menu-profile {
   padding-bottom: 10px;
@@ -1113,7 +1220,7 @@ socket.emit("getId");
 .vertical-divider {
   width: 1px;
   align-self: stretch;
-  background-color: #ccc;  
+  background-color: #ccc;
 }
 
 .menu-horizontal-container .active-user {
@@ -1122,8 +1229,8 @@ socket.emit("getId");
 
 .menu-horizontal-container .active-user .user-name div {
   font-size: 1.2rem;
-  padding: 5px 0;   
-  color: #333;   
+  padding: 5px 0;
+  color: #333;
 }
 
 .menu-labels .menu-title {
@@ -1162,7 +1269,7 @@ socket.emit("getId");
 
 .checkbox-label .label-input {
   /* チェックボックスを右端に配置 */
-  margin-left: auto; 
+  margin-left: auto;
   /* サイズを少し大きくする */
   width: 18px;
   height: 18px;
