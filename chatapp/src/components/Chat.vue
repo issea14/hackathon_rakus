@@ -293,16 +293,25 @@ socket.emit("getId");
       <div class="vertical-divider"></div>
 
       <div class="menu-item menu-labels">
-        <p class="menu-title">ラベルで絞り込み</p>
-        <div class="selected" v-for="(checked, i) in isSelected" :key="i">
-          <label class="checkbox-label">
-            <span class="material-icons">{{ labelIcons[i] }}</span>
-            <span>{{ labels[i] }}</span>
-            <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
-          </label>
-        </div>
-        <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
-      </div>
+  <p class="label-title">ラベルで絞り込み</p>
+  <div class="label-checkboxes vertical-labels">  <label
+      v-for="(label, i) in labels"
+      :key="i"
+      class="label-checkbox"
+      :class="{ 'selected': isSelected[i] }"
+    >
+      <input
+        type="checkbox"
+        v-model="isSelected[i]"
+        @change="onChangeSelection"
+        class="checkbox-input"
+      >
+      <span class="material-icons">{{ labelIcons[i] }}</span>
+      <span class="label-text">{{ label }}</span>
+    </label>
+  </div>
+  <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
+</div>
     </div>
     <div class="exit-section">
         <v-btn
@@ -1200,6 +1209,17 @@ socket.emit("getId");
   width: 100%;
   padding: 8px 0;
   font-size: 1.1rem;
+}
+
+.vertical-labels {
+  flex-direction: column;
+  gap: 0.5rem; 
+}
+
+.menu-content .exit-section {
+  width: 90%; 
+  max-width: 340px; 
+  margin: 20px auto 0 auto; 
 }
 
 </style>
