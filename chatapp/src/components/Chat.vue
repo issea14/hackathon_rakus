@@ -54,11 +54,11 @@ const isSelected = reactive([false, false, false, false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
-  { name: "旅行先", color: "#3498db", icon: "mdi-map" },
+  { name: "旅行先", color: "#349834", icon: "mdi-map" },
   { name: "日程", color: "#27ae60", icon: "mdi-calendar" },
   { name: "交通手段", color: "#f39c12", icon: "mdi-car" },
   { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
-  { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
+  { name: "予算", color: "#a9a029", icon: "mdi-currency-usd" }
 ])
 const summaryDocument = ref("")
 const isLoadingSummary = ref(false)
@@ -353,16 +353,25 @@ socket.emit("getId");
       <div class="vertical-divider"></div>
 
       <div class="menu-item menu-labels">
-        <p class="menu-title">ラベルで絞り込み</p>
-        <div class="selected" v-for="(checked, i) in isSelected" :key="i">
-          <label class="checkbox-label">
-            <span class="material-icons">{{ labelIcons[i] }}</span>
-            <span>{{ labels[i] }}</span>
-            <input class="label-input" type="checkbox" v-model="isSelected[i]" @change="onChangeSelection">
-          </label>
-        </div>
-        <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
-      </div>
+  <p class="label-title">ラベルで絞り込み</p>
+  <div class="label-checkboxes vertical-labels">  <label
+      v-for="(label, i) in labels"
+      :key="i"
+      class="label-checkbox"
+      :class="{ 'selected': isSelected[i] }"
+    >
+      <input
+        type="checkbox"
+        v-model="isSelected[i]"
+        @change="onChangeSelection"
+        class="checkbox-input"
+      >
+      <span class="material-icons">{{ labelIcons[i] }}</span>
+      <span class="label-text">{{ label }}</span>
+    </label>
+  </div>
+  <button type="button" class="button-normal button-reset" @click="onReset">リセット</button>
+</div>
     </div>
     <div class="exit-section">
         <v-btn
@@ -414,20 +423,24 @@ socket.emit("getId");
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <!-- <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <div v-for="(label, i) in (labels)" :key="i">
                 <v-chip
-                  v-for="label in message.labels"
-                  :key="label"
+                  v-if="message.isLabeled[i]"
                   size="x-small"
-                  :color="availableLabels.find(l => l.name === label)?.color"
+                  :color="availableLabels.find(l => l.name == labels[i])?.color"
                   class="message-label"
+                  variant="flat"
                 >
+                <span class="material-icons label-icons">{{ labelIcons[i] }}</span>
+                <!--
                   <v-icon
-                    size="12"
-                    :icon="availableLabels.find(l => l.name === label)?.icon"
+                    size="x-small"
+                    :icon="availableLabels.find(l => l.name == labels[i])?.icon"
                     start
                   ></v-icon>
-                  {{ label }}
+                -->
+
+                  {{ labels[i] }}
                 </v-chip>
               </div> -->
               <div class="message-meta">
@@ -819,7 +832,7 @@ socket.emit("getId");
 .label-checkboxes {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.05rem;
 }
 
 .label-checkbox {
@@ -1472,4 +1485,22 @@ socket.emit("getId");
   font-size: 1.1rem;
 }
 
+.label-icons {
+  font-size: 12px;
+}
+
+.vertical-labels {
+  flex-direction: column;
+  gap: 0.5rem; 
+}
+
+.menu-content .exit-section {
+  width: 90%; 
+  max-width: 340px; 
+  margin: 20px auto 0 auto; 
+}
+
+.label-checkboxes .material-icons{
+  font-size: 17px;
+}
 </style>
