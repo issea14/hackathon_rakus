@@ -60,6 +60,7 @@ const availableLabels = reactive([
   { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
   { name: "予算", color: "#a9a029", icon: "mdi-currency-usd" }
 ])
+const summaryDocument = ref("")
 // #endregion
 
 
@@ -130,6 +131,12 @@ const onChangeSelection = () =>{
 // リプライをクリアする処理
 const clearReply = () => {
   replyMessage.value = null
+}
+
+const generateSummary = () => {
+  debugger
+  socket.emit("requestGemini", "")
+  isLoading = true
 }
 
 // #endregion
@@ -232,6 +239,12 @@ const onReceiveDeleteMessages = (data) => {
 const onReceiveNewId = (data) => {
   id = data;
 }
+
+const onUpdateGeminiResponse = (data) => {
+  debugger
+  summaryDocument.value = data
+  isLoading = false
+}
 // #endregion
 
 // #region local methods
@@ -256,9 +269,14 @@ const registerSocketEvent = () => {
   socket.on("newId", (data) => {
     onReceiveNewId(data)
   })
+
+  socket.on("updateGeminiResponse", (data) => {
+    onUpdateGeminiResponse(data)
+  })
 }
 // #endregion
 
+socket.emit("getMessages", "")
 socket.emit("getId");
 
 </script>
@@ -266,7 +284,40 @@ socket.emit("getId");
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <div class="chat-container">
-    <div class="hamburger-menu">
+    <div class="ai-summary-menu">
+      <input type="checkbox" id="ai-menu-btn-check">
+      <label for="ai-menu-btn-check" class="menu-btn">
+        <span class="material-icons">summarize</span>
+      </label>
+      <div class="menu-content">
+        <div class="summary-container">
+          <p class="menu-title">AI 会話要約</p>
+          <div class="summary-document">
+            <div v-if="isLoadingSummary" class="loading-spinner"></div>
+            <div v-else-if="summaryDocument" style="white-space: pre-wrap;">{{ summaryDocument }}</div>
+            <div v-else class="empty-summary">
+              <span class="material-icons" style="font-size: 48px; color: #bdc3c7; margin-bottom: 1rem;">chat_bubble_outline</span>
+              <p style="color: #7f8c8d; text-align: center;">会話の要約を生成するには、下のボタンをクリックしてください。</p>
+            </div>
+          </div>
+          <div class="summary-button-container">
+            <v-btn
+              @click="generateSummary"
+              :loading="isLoadingSummary"
+              color="primary"
+              class="generate-button"
+              block
+            >
+              <span class="material-icons">auto_fix_high</span>
+              要約を生成
+            </v-btn>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  <div class="hamburger-menu">
   <input type="checkbox" id="menu-btn-check">
   <label for="menu-btn-check" class="menu-btn">
     <span></span>
@@ -341,8 +392,8 @@ socket.emit("getId");
         <div class="messages-container">
           <!-- メッセージリスト -->
           <div
-            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter((message) => {
-              return select(isSelected, message.isLabeled)
+            v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter(message => {
+              return select(message.isLabeled, isSelected)
             }))"
             :key="index"
             :class="[
@@ -382,7 +433,7 @@ socket.emit("getId");
 
                   {{ labels[i] }}
                 </v-chip>
-              </div>
+              </div> -->
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
@@ -940,8 +991,17 @@ socket.emit("getId");
   margin-bottom: 0;
 }
 
+.ai-summary-menu .menu-content {
+    left: -100%;
+    right: auto;
+}
+
 #menu-btn-check:checked ~ .menu-content {
   right: 0;
+}
+
+#ai-menu-btn-check:checked ~ .menu-content {
+  left: 0;
 }
 
 .menu-content {
@@ -1059,6 +1119,200 @@ socket.emit("getId");
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
+/* AI Summary Menu */
+.ai-summary-menu {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  z-index: 100;
+}
+
+#ai-menu-btn-check {
+  display: none;
+}
+
+.ai-summary-menu .menu-btn > .material-icons {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  background: none !important;
+  top: auto !important;
+  left: auto !important;
+  display: inline-flex !important;
+  font-size: 30px; /* 必要なサイズに */
+  color: white; /* アイコン色 */
+}
+
+.ai-summary-menu .menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  position: relative;
+}
+
+.ai-summary-menu .menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+  background: linear-gradient(135deg, #2980b9, #1f639a);
+}
+
+.ai-summary-menu .menu-btn .material-icons {
+  color: white; /* アイコンの色 */
+  font-size: 30px; /* アイコンのサイズ */
+}
+
+.ai-summary-menu .menu-content {
+  width: 400px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: -400px;
+  z-index: 1;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+  backdrop-filter: blur(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#ai-menu-btn-check:checked ~ .menu-content {
+  left: 0;
+}
+
+.summary-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  padding: 50px 20px 20px 20px;
+  overflow: hidden;
+}
+
+.summary-container .menu-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.summary-document {
+  flex-grow: 1 1 auto;
+  overflow-y: auto;
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.1);
+  min-height: 300px;
+}
+
+/* ボタンを常に下に見せる（押し出されない・スクロール外にいかない） */
+.summary-button-container {
+  position: sticky;
+  bottom: 0;
+}
+
+.summary-document::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* スクロールバーのスタイル */
+.summary-document::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+
+/* スクロールバーのサムのスタイル */
+.summary-document::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 3px;
+}
+
+/* スクロールバーのサムのホバー時のスタイル */
+.summary-document::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2980b9, #1f639a);
+}
+
+.generate-button {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #3498db, #2980b9) !important;
+  color: white !important;
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+}
+
+.generate-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4) !important;
+}
+
+.generate-button .material-icons {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.empty-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 3px solid rgba(52, 152, 219, 0.1);
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
+}
+
+.summary-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.95); /* 必要なら背景をつけて内容と被らないように */
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
 
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
