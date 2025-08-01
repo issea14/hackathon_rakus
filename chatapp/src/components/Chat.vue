@@ -54,11 +54,11 @@ const isSelected = reactive([false, false, false, false, false, false])
 const replyMessage = ref(null) // リプライ対象のメッセージ情報を格納
 const availableLabels = reactive([
   { name: "重要", color: "#e74c3c", icon: "mdi-star" },
-  { name: "旅行先", color: "#3498db", icon: "mdi-map" },
+  { name: "旅行先", color: "#349834", icon: "mdi-map" },
   { name: "日程", color: "#27ae60", icon: "mdi-calendar" },
   { name: "交通手段", color: "#f39c12", icon: "mdi-car" },
   { name: "宿泊施設", color: "#8e44ad", icon: "mdi-home" },
-  { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
+  { name: "予算", color: "#a9a029", icon: "mdi-currency-usd" }
 ])
 // #endregion
 
@@ -363,22 +363,26 @@ socket.emit("getId");
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <!-- <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <div v-for="(label, i) in (labels)" :key="i">
                 <v-chip
-                  v-for="label in message.labels"
-                  :key="label"
+                  v-if="message.isLabeled[i]"
                   size="x-small"
-                  :color="availableLabels.find(l => l.name === label)?.color"
+                  :color="availableLabels.find(l => l.name == labels[i])?.color"
                   class="message-label"
+                  variant="flat"
                 >
+                <span class="material-icons label-icons">{{ labelIcons[i] }}</span>
+                <!--
                   <v-icon
-                    size="12"
-                    :icon="availableLabels.find(l => l.name === label)?.icon"
+                    size="x-small"
+                    :icon="availableLabels.find(l => l.name == labels[i])?.icon"
                     start
                   ></v-icon>
-                  {{ label }}
+                -->
+
+                  {{ labels[i] }}
                 </v-chip>
-              </div> -->
+              </div>
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
@@ -1209,6 +1213,10 @@ socket.emit("getId");
   width: 100%;
   padding: 8px 0;
   font-size: 1.1rem;
+}
+
+.label-icons {
+  font-size: 12px;
 }
 
 .vertical-labels {
