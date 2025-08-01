@@ -49,7 +49,7 @@ const onEnter = () => {
       <!-- ヘッダーセクション -->
       <div class="header-section">
         <div class="icon-wrapper">
-          <span class="material-icons" aria-hidden="true">travel_explore</span>
+          <span class="material-icons" aria-hidden="true">travel_explore</span> <!-- アイコン -->
         </div>
         <h1 class="login-title">ラベリングで管理する旅行計画チャット</h1> <!-- タイトル -->
         <p class="login-subtitle">チャットルームへようこそ</p> <!-- サブタイトル -->
@@ -179,6 +179,13 @@ const onEnter = () => {
   justify-content: center; /* 横方向中央揃え */
   margin: 0 auto 20px; /* 上下中央揃え */
   box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3); /* 影 */
+}
+
+.icon-wrapper .material-icons {
+  font-size: clamp(40px, 100vw, 80px);
+  color: white;
+  line-height: 1;
+  display: block;
 }
 
 .icon-wrapper .material-icons {
