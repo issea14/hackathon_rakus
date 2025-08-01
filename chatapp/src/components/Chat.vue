@@ -441,7 +441,7 @@ socket.emit("getId");
 
                   {{ labels[i] }}
                 </v-chip>
-              </div> -->
+              </div>
               <div class="message-meta">
                 <span class="message-time">{{ formatTime(message.dateTime) }}</span>
                 <span class="message-date">{{ formatDate(message.dateTime) }}</span>
