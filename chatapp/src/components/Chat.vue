@@ -322,7 +322,7 @@ socket.emit("getId");
           <!-- メッセージリスト -->
           <div
             v-for="(message, index) in (isEqualArray(isSelected, [false, false, false, false, false, false]) ? messageList : messageList.filter((message) => {
-              return isEqualArray(isSelected, message.isLabeled)
+              return select(isSelected, message.isLabeled)
             }))"
             :key="index"
             :class="[
