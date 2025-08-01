@@ -343,20 +343,19 @@ socket.emit("getId");
                 </button>
               </div>
               <div class="message-content">{{ message.text }}</div>
-              <div v-if="message.labels && message.labels.length > 0" class="message-labels">
+              <div v-for="(label, i) in (labels)" :key="i">
                 <v-chip
-                  v-for="label in message.labels"
-                  :key="label"
+                  v-if="message.isLabeled[i]"
                   size="x-small"
-                  :color="availableLabels.find(l => l.name === label)?.color"
+                  :color="availableLabels.find(l => l.name == label[i])?.color"
                   class="message-label"
                 >
                   <v-icon
-                    size="12"
-                    :icon="availableLabels.find(l => l.name === label)?.icon"
+                    size="7"
+                    :icon="availableLabels.find(l => l.name == label[i])?.icon"
                     start
                   ></v-icon>
-                  {{ label }}
+                  {{ labels[i] }}
                 </v-chip>
               </div>
               <div class="message-meta">
