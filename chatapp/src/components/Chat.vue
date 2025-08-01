@@ -61,6 +61,7 @@ const availableLabels = reactive([
   { name: "予算", color: "#2980b9", icon: "mdi-currency-usd" }
 ])
 const summaryDocument = ref("")
+const isLoadingSummary = ref(false)
 // #endregion
 
 
@@ -134,9 +135,8 @@ const clearReply = () => {
 }
 
 const generateSummary = () => {
-  debugger
   socket.emit("requestGemini", "")
-  isLoading = true
+  isLoadingSummary.value = true
 }
 
 // #endregion
@@ -241,9 +241,8 @@ const onReceiveNewId = (data) => {
 }
 
 const onUpdateGeminiResponse = (data) => {
-  debugger
   summaryDocument.value = data
-  isLoading = false
+  isLoadingSummary.value = false
 }
 // #endregion
 
@@ -304,12 +303,22 @@ socket.emit("getId");
             <v-btn
               @click="generateSummary"
               :loading="isLoadingSummary"
+              :disabled="isLoadingSummary"
               color="primary"
               class="generate-button"
+              :class="{ 'loading': isLoadingSummary }"
               block
             >
-              <span class="material-icons">auto_fix_high</span>
-              要約を生成
+              <v-progress-circular
+                v-if="isLoadingSummary"
+                indeterminate
+                size="20"
+                width="2"
+                color="white"
+                class="mr-2"
+              ></v-progress-circular>
+              <span v-if="!isLoadingSummary" class="material-icons">auto_fix_high</span>
+              {{ isLoadingSummary ? '生成中...' : '要約を生成' }}
             </v-btn>
           </div>
         </div>
@@ -1251,9 +1260,16 @@ socket.emit("getId");
   border: none !important;
 }
 
-.generate-button:hover {
+.generate-button:hover:not(.loading) {
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4) !important;
+}
+
+.generate-button.loading {
+  background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .generate-button .material-icons {
