@@ -300,16 +300,18 @@ socket.emit("getId");
               <p style="color: #7f8c8d; text-align: center;">会話の要約を生成するには、下のボタンをクリックしてください。</p>
             </div>
           </div>
-          <v-btn
-            @click="generateSummary"
-            :loading="isLoadingSummary"
-            color="primary"
-            class="generate-button"
-            block
-          >
-            <span class="material-icons">auto_fix_high</span>
-            要約を生成
-          </v-btn>
+          <div class="summary-button-container">
+            <v-btn
+              @click="generateSummary"
+              :loading="isLoadingSummary"
+              color="primary"
+              class="generate-button"
+              block
+            >
+              <span class="material-icons">auto_fix_high</span>
+              要約を生成
+            </v-btn>
+          </div>
         </div>
       </div>
     </div>
@@ -1272,10 +1274,25 @@ socket.emit("getId");
   margin: 30px auto;
 }
 
+.summary-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.95); /* 必要なら背景をつけて内容と被らないように */
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
 
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
