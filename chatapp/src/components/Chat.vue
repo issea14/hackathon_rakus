@@ -772,7 +772,7 @@ socket.emit("getId");
 .label-checkboxes {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.05rem;
 }
 
 .label-checkbox {
