@@ -2,6 +2,7 @@
 import { inject, ref, reactive, onMounted, nextTick } from "vue"
 import { useRouter } from "vue-router"
 import socketManager from '../socketManager.js'
+import VueMarkdown from 'vue3-markdown-it'
 
 class Message {
   constructor(id, user, text, dateTime, isLabeled){
@@ -293,7 +294,7 @@ socket.emit("getId");
           <p class="menu-title">AI 会話要約</p>
           <div class="summary-document">
             <div v-if="isLoadingSummary" class="loading-spinner"></div>
-            <div v-else-if="summaryDocument" style="white-space: pre-wrap;">{{ summaryDocument }}</div>
+            <VueMarkdown v-else-if="summaryDocument" :source="summaryDocument" class="markdown-content" />
             <div v-else class="empty-summary">
               <span class="material-icons" style="font-size: 48px; color: #bdc3c7; margin-bottom: 1rem;">chat_bubble_outline</span>
               <p style="color: #7f8c8d; text-align: center;">会話の要約を生成するには、下のボタンをクリックしてください。</p>
@@ -1502,5 +1503,89 @@ socket.emit("getId");
 
 .label-checkboxes .material-icons{
   font-size: 17px;
+}
+
+/* マークダウンコンテンツのスタイル */
+.markdown-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.7;
+  color: #2c3e50;
+}
+
+.markdown-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem 0;
+  color: #34495e;
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem 0;
+  color: #34495e;
+}
+
+.markdown-content p {
+  margin-bottom: 1rem;
+}
+
+.markdown-content ul, .markdown-content ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: #7f8c8d;
+}
+
+.markdown-content code {
+  background: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.9rem;
+  color: #e74c3c;
+}
+
+.markdown-content pre {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  color: #2c3e50;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #3498db;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #7f8c8d;
+  font-style: italic;
 }
 </style>
