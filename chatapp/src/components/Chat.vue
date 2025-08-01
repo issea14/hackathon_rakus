@@ -1179,7 +1179,8 @@ socket.emit("getId");
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  padding: 80px 20px 20px 20px;
+  padding: 50px 20px 20px 20px;
+  overflow: hidden;
 }
 
 .summary-container .menu-title {
@@ -1195,7 +1196,7 @@ socket.emit("getId");
 }
 
 .summary-document {
-  flex-grow: 1;
+  flex-grow: 1 1 auto;
   overflow-y: auto;
   background: white;
   border-radius: 15px;
@@ -1207,6 +1208,12 @@ socket.emit("getId");
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(52, 152, 219, 0.1);
   min-height: 300px;
+}
+
+/* ボタンを常に下に見せる（押し出されない・スクロール外にいかない） */
+.summary-button-container {
+  position: sticky;
+  bottom: 0;
 }
 
 .summary-document::-webkit-scrollbar {
