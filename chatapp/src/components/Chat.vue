@@ -1230,4 +1230,7 @@ socket.emit("getId");
   margin: 20px auto 0 auto; 
 }
 
+.label-checkboxes .material-icons{
+  font-size: 17px;
+}
 </style>
